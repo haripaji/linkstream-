@@ -1,137 +1,2042 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080b14">
-<title>LinkStream — Universal Video Player</title>
-<style>
-:root{color-scheme:dark;--bg:#080b14;--panel:#111827;--line:#253149;--muted:#9aa8bd;--accent:#7c5cff;--text:#f4f7ff}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#24204c 0,transparent 55%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
-main{width:min(1050px,94%);margin:42px auto}.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#9c70ff,#4b8cff);display:grid;place-items:center;font-size:21px;box-shadow:0 8px 30px #694bff55}.brand h1{font-size:21px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}
-h2{font-size:clamp(25px,5vw,38px);margin:0 0 8px;letter-spacing:-1px}.intro{color:var(--muted);margin:0 0 24px}
-.panel{background:#111827df;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 20px 70px #0005}
-label{display:block;font-size:13px;color:#c5d0e1;margin:0 0 9px}.inputrow{display:flex;gap:9px}
-input{min-width:0;flex:1;background:#090f1c;border:1px solid #34415a;border-radius:12px;padding:15px;color:white;font-size:15px;outline:none}
-input:focus{border-color:#967dff;box-shadow:0 0 0 3px #8064ff22}
-button{border:0;border-radius:12px;padding:0 20px;background:linear-gradient(135deg,#8965ff,#5a72ff);color:white;font-weight:700;cursor:pointer;min-height:48px}
-button.secondary{background:#202b40;border:1px solid #34415a}button:hover{filter:brightness(1.12)}
-.examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}.examples span{color:var(--muted);font-size:12px}.chip{border:1px solid #34415a;background:#182237;color:#d8e1f2;border-radius:20px;padding:6px 10px;font-size:12px;cursor:pointer}
-.playerbox{margin-top:18px;background:#03060c;border:1px solid var(--line);border-radius:18px;overflow:hidden}
-.screen{aspect-ratio:16/9;display:grid;place-items:center;position:relative;background:#03060c}
-video,iframe{width:100%;height:100%;position:absolute;inset:0;border:0;background:#000}
-.placeholder{text-align:center;padding:24px;color:var(--muted)}.playicon{font-size:42px;color:#8d79ff;margin-bottom:8px}
-.status{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:13px 16px;border-top:1px solid #1b2638;font-size:12px;color:var(--muted)}
-#statusText{overflow-wrap:anywhere}.actions{display:flex;gap:8px;flex-wrap:wrap}
-.note{margin-top:18px;padding:15px;border-radius:14px;background:#0d1524;border:1px solid #24334a;color:#aebbd0;font-size:13px;line-height:1.55}
-.note strong{color:#e7edfa}.footer{color:#66748a;font-size:12px;text-align:center;margin:22px 0}
-@media(max-width:600px){main{margin:25px auto}.panel{padding:13px}.inputrow{flex-direction:column}.inputrow button{min-height:47px}.status{align-items:flex-start;flex-direction:column}.screen{aspect-ratio:16/9}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>LinkStream — Multi-Platform Video &amp; Reels Hub</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            obsidian: {
+              950: '#09090b',
+              900: '#111114',
+              850: '#15151a',
+              800: '#18181f',
+              700: '#272732'
+            },
+            brand: {
+              500: '#f43f5e',
+              600: '#e11d48',
+              accent: '#6366f1'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #09090b;
+      color: #f4f4f5;
+      overflow-x: hidden;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fadeSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    @keyframes heartPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+      35% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+      70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+    }
+    .heart-burst { animation: heartPop 0.7s ease-out forwards; }
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin-disc { animation: spinSlow 6s linear infinite; }
+    .insta-ring {
+      background: linear-gradient(45deg, #f59e0b, #ec4899, #8b5cf6);
+    }
+    .reel-viewport {
+      position: relative;
+      height: min(82vh, 740px);
+      width: min(calc(min(82vh, 740px) * 9 / 16), 94vw, 416px);
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+    }
+    @media (max-width: 640px) {
+      .reel-viewport {
+        height: min(78vh, 660px);
+        width: min(calc(min(78vh, 660px) * 9 / 16), 94vw);
+      }
+    }
+  </style>
 </head>
-<body>
-<main>
-  <div class="brand"><div class="logo">▶</div><div><h1>LinkStream</h1><p>UNIVERSAL VIDEO PLAYER</p></div></div>
-  <h2>Play any video link.</h2>
-  <p class="intro">Paste a supported video URL and play it in one place.</p>
-  <section class="panel">
-    <label for="videoUrl">VIDEO URL</label>
-    <div class="inputrow">
-      <input id="videoUrl" type="url" placeholder="https://example.com/video.mp4" autocomplete="url">
-      <button id="playBtn">▶ Play video</button>
-    </div>
-    <div class="examples"><span>Try:</span>
-      <button class="chip" data-url="https://www.youtube.com/">YouTube</button>
-      <button class="chip" data-url="https://vimeo.com/">Vimeo</button>
-      <button class="chip" data-url="https://www.dailymotion.com/">Dailymotion</button>
-    </div>
-  </section>
+<body class="min-h-screen bg-obsidian-950 text-zinc-100 antialiased selection:bg-brand-500/30 selection:text-white">
 
-  <section class="playerbox">
-    <div class="screen" id="screen">
-      <div class="placeholder"><div class="playicon">▷</div><strong>Your video appears here</strong><div style="font-size:13px;margin-top:6px">Paste a link above to get started</div></div>
-    </div>
-    <div class="status"><span id="statusText">Ready · Waiting for a video link</span>
-      <div class="actions"><button class="secondary" id="openBtn">Open source ↗</button><button class="secondary" id="clearBtn">Clear</button></div>
-    </div>
-  </section>
+  <!-- Top Header -->
+  <header class="sticky top-0 z-40 border-b border-white/[0.08] bg-obsidian-950/90 backdrop-blur-xl">
+    <div class="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-3 px-4 lg:px-6">
+      <button id="brandBtn" type="button" class="flex shrink-0 items-center gap-2.5 text-left focus:outline-none group">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 via-rose-500 to-indigo-600 shadow-lg shadow-brand-500/20 ring-1 ring-white/15 transition group-hover:scale-105">
+          <i data-lucide="play" class="h-4 w-4 fill-white text-white ml-0.5"></i>
+        </div>
+        <div class="leading-tight">
+          <span class="block text-[15px] font-bold tracking-tight text-white">LinkStream</span>
+          <span class="hidden text-[11px] font-medium text-zinc-400 sm:block">Creator Video Hub</span>
+        </div>
+      </button>
 
-  <div class="note"><strong>Supported link types</strong><br>
-    • Direct files: MP4, WebM, Ogg<br>
-    • Streaming: HLS (.m3u8) where the host permits playback<br>
-    • Platform embeds: YouTube, Vimeo, Dailymotion and supported embed URLs<br><br>
-    <strong>Limitations:</strong> No player can guarantee playback from literally every website. Private videos, login-only pages, DRM-protected streams, and sites that block embedding must be opened on their original platform. This tool does not bypass those restrictions.
+      <div class="relative flex-1 max-w-xl">
+        <i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"></i>
+        <input id="searchInput" type="text" placeholder="Search videos, reels, creators, or platforms..." class="w-full rounded-xl border border-white/[0.08] bg-obsidian-900 py-2 pl-10 pr-9 text-sm text-zinc-100 placeholder-zinc-500 transition focus:border-brand-500/60 focus:bg-obsidian-850 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+        <button id="clearSearchBtn" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-zinc-400 hover:bg-white/10 hover:text-white" aria-label="Clear search">
+          <i data-lucide="x" class="h-3.5 w-3.5"></i>
+        </button>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-2">
+        <select id="sortSelect" class="hidden md:block rounded-xl border border-white/[0.08] bg-obsidian-900 px-3 py-2 text-xs font-medium text-zinc-300 focus:border-brand-500/60 focus:outline-none">
+          <option value="newest">Newest</option>
+          <option value="likes">Most Liked</option>
+          <option value="comments">Most Discussed</option>
+        </select>
+
+        <button id="openGithubModalBtn" type="button" class="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-obsidian-900 px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:border-white/20 hover:bg-obsidian-800">
+          <i data-lucide="github" class="h-4 w-4"></i>
+          <span>Publish</span>
+        </button>
+        <button id="openGithubModalBtnMobile" type="button" class="inline-flex sm:hidden items-center justify-center rounded-xl border border-white/[0.08] bg-obsidian-900 p-2 text-zinc-200 transition hover:bg-obsidian-800" aria-label="GitHub Publish">
+          <i data-lucide="github" class="h-4 w-4"></i>
+        </button>
+
+        <button id="openPostModalBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-600 active:scale-95">
+          <i data-lucide="plus" class="h-4 w-4"></i>
+          <span>Post Link</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto flex max-w-[1440px]">
+    <!-- Sidebar -->
+    <aside class="hidden lg:flex w-60 shrink-0 flex-col justify-between border-r border-white/[0.06] bg-obsidian-950/60 px-3.5 py-5 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto no-scrollbar">
+      <div class="space-y-6">
+        <div>
+          <p class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Discover</p>
+          <nav class="space-y-1">
+            <button type="button" data-tab="all" class="tab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition">
+              <span class="flex items-center gap-2.5"><i data-lucide="home" class="h-4 w-4"></i><span>Home Feed</span></span>
+              <span id="navCountAll" class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-zinc-400">0</span>
+            </button>
+            <button type="button" data-tab="short" class="tab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition">
+              <span class="flex items-center gap-2.5"><i data-lucide="clapperboard" class="h-4 w-4"></i><span>Reels &amp; Shorts</span></span>
+              <span id="navCountShort" class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-zinc-400">0</span>
+            </button>
+            <button type="button" data-tab="long" class="tab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition">
+              <span class="flex items-center gap-2.5"><i data-lucide="tv" class="h-4 w-4"></i><span>Long Videos</span></span>
+              <span id="navCountLong" class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-zinc-400">0</span>
+            </button>
+            <button type="button" data-tab="liked" class="tab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition">
+              <span class="flex items-center gap-2.5"><i data-lucide="heart" class="h-4 w-4"></i><span>Liked</span></span>
+              <span id="navCountLiked" class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-zinc-400">0</span>
+            </button>
+          </nav>
+        </div>
+
+        <div>
+          <p class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Source Platform</p>
+          <div class="px-1">
+            <select id="platformFilter" class="w-full rounded-xl border border-white/[0.08] bg-obsidian-900 px-3 py-2 text-xs font-medium text-zinc-200 focus:border-brand-500/60 focus:outline-none">
+              <option value="all">All Platforms</option>
+              <option value="direct">Direct MP4 / Open Source</option>
+              <option value="youtube">YouTube</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="vimeo">Vimeo</option>
+              <option value="dailymotion">Dailymotion</option>
+              <option value="other">Other Web</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-2xl border border-white/[0.08] bg-gradient-to-b from-obsidian-900 to-obsidian-950 p-3.5">
+        <div class="flex items-center gap-2 text-xs font-semibold text-white">
+          <i data-lucide="globe" class="h-4 w-4 text-emerald-400"></i>
+          <span>GitHub Pages Ready</span>
+        </div>
+        <p class="mt-1.5 text-[11px] leading-relaxed text-zinc-400">Export your posted links as JSON anytime to share or back up.</p>
+        <button id="sidebarGithubBtn" type="button" class="mt-3 w-full rounded-lg border border-white/10 bg-white/[0.05] py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-white/10">
+          Deploy Guide &amp; Export
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="min-w-0 flex-1 px-4 py-5 pb-24 lg:px-7 lg:py-6 lg:pb-12">
+      <!-- Mobile Nav -->
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2 lg:hidden">
+        <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+          <button type="button" data-tab="all" class="tab-btn-mobile rounded-lg px-3 py-1.5 text-xs font-semibold transition">Home</button>
+          <button type="button" data-tab="short" class="tab-btn-mobile rounded-lg px-3 py-1.5 text-xs font-semibold transition">Reels</button>
+          <button type="button" data-tab="long" class="tab-btn-mobile rounded-lg px-3 py-1.5 text-xs font-semibold transition">Long</button>
+          <button type="button" data-tab="liked" class="tab-btn-mobile rounded-lg px-3 py-1.5 text-xs font-semibold transition">Liked</button>
+        </div>
+        <select id="platformFilterMobile" class="rounded-lg border border-white/[0.08] bg-obsidian-900 px-2.5 py-1.5 text-xs font-medium text-zinc-200 focus:border-brand-500/60 focus:outline-none">
+          <option value="all">All Platforms</option>
+          <option value="direct">Direct MP4 / Open Source</option>
+          <option value="youtube">YouTube</option>
+          <option value="instagram">Instagram</option>
+          <option value="facebook">Facebook</option>
+          <option value="vimeo">Vimeo</option>
+          <option value="dailymotion">Dailymotion</option>
+          <option value="other">Other Web</option>
+        </select>
+      </div>
+
+      <!-- ================= INSTAGRAM-STYLE REELS VIEW ================= -->
+      <section id="instaReelsView" class="hidden">
+        <div class="flex flex-col items-center justify-center">
+          <div class="relative flex flex-col lg:flex-row items-center lg:items-start justify-center gap-5 w-full">
+            <div class="relative flex items-end justify-center gap-3 sm:gap-4">
+              <div id="reelViewport" class="reel-viewport ring-1 ring-white/15 select-none">
+                <div id="reelMediaLayer" class="absolute inset-0 h-full w-full bg-black"></div>
+                <div id="reelGestureLayer" class="hidden absolute inset-0 z-10 cursor-pointer"></div>
+
+                <!-- Heart Burst -->
+                <div id="reelHeartBurst" class="pointer-events-none hidden absolute left-1/2 top-1/2 z-30">
+                  <i data-lucide="heart" class="h-24 w-24 fill-white text-white drop-shadow-2xl"></i>
+                </div>
+
+                <!-- Center Play/Pause Icon -->
+                <div id="reelPauseIcon" class="pointer-events-none hidden absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 flex h-16 w-16 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm">
+                  <i data-lucide="play" class="h-8 w-8 fill-white ml-1"></i>
+                </div>
+
+                <!-- Top Gradient Overlay -->
+                <div class="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/75 via-black/30 to-transparent px-4 pt-3.5 pb-8">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-extrabold tracking-tight text-white drop-shadow">Reels</span>
+                    <span id="reelPlatformBadge" class="rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase text-white backdrop-blur-md">MP4</span>
+                  </div>
+                  <div class="pointer-events-auto flex items-center gap-1.5">
+                    <button id="reelMuteBtn" type="button" class="hidden flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-md transition hover:bg-black/80" title="Mute / Unmute">
+                      <i data-lucide="volume-x" class="h-3.5 w-3.5"></i>
+                      <span id="reelMuteLabel">Tap for sound</span>
+                    </button>
+                    <button id="reelCounterPill" type="button" class="rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-md">1 / 1</button>
+                  </div>
+                </div>
+
+                <!-- Bottom Creator + Caption -->
+                <div class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-4 pt-14 pb-4 pr-16 sm:pr-4">
+                  <div class="pointer-events-auto flex items-center gap-2.5">
+                    <div class="insta-ring rounded-full p-[2px]">
+                      <div id="reelAvatar" class="flex h-8 w-8 items-center justify-center rounded-full bg-obsidian-950 text-xs font-bold text-white">C</div>
+                    </div>
+                    <span id="reelCreator" class="text-xs sm:text-sm font-bold text-white drop-shadow">creator</span>
+                    <button id="reelFollowBtn" type="button" class="rounded-lg border border-white/50 px-2.5 py-0.5 text-[11px] font-semibold text-white transition hover:bg-white/15">Follow</button>
+                  </div>
+                  <p id="reelCaption" class="mt-2 line-clamp-2 text-xs sm:text-[13px] font-medium text-white/95 drop-shadow"></p>
+                  <div class="mt-2.5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[11px] text-white/90 backdrop-blur-md">
+                    <i data-lucide="music" class="h-3 w-3 shrink-0"></i>
+                    <span id="reelAudioText" class="truncate">Original Audio</span>
+                  </div>
+                </div>
+
+                <!-- Mobile Overlaid Right Rail -->
+                <div class="sm:hidden absolute bottom-4 right-2.5 z-30 flex flex-col items-center gap-4">
+                  <button type="button" data-reel-action="like" class="reel-like-btn flex flex-col items-center gap-0.5 text-white drop-shadow">
+                    <i data-lucide="heart" class="h-7 w-7"></i>
+                    <span class="reel-like-count text-[11px] font-semibold">0</span>
+                  </button>
+                  <button type="button" data-reel-action="comment" class="flex flex-col items-center gap-0.5 text-white drop-shadow">
+                    <i data-lucide="message-circle" class="h-7 w-7"></i>
+                    <span class="reel-comment-count text-[11px] font-semibold">0</span>
+                  </button>
+                  <button type="button" data-reel-action="share" class="flex flex-col items-center gap-0.5 text-white drop-shadow">
+                    <i data-lucide="send" class="h-6 w-6"></i>
+                  </button>
+                  <button type="button" data-reel-action="download" class="flex flex-col items-center gap-0.5 text-white drop-shadow">
+                    <i data-lucide="download" class="h-6 w-6"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Desktop Floating Right Action Rail -->
+              <div class="hidden sm:flex flex-col items-center gap-4 pb-2">
+                <button type="button" data-reel-action="like" class="reel-like-btn group flex flex-col items-center gap-1 text-zinc-200 transition hover:text-white">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-full bg-obsidian-900 border border-white/10 transition group-hover:bg-obsidian-800">
+                    <i data-lucide="heart" class="h-5 w-5"></i>
+                  </span>
+                  <span class="reel-like-count text-xs font-semibold">0</span>
+                </button>
+
+                <button type="button" data-reel-action="comment" class="group flex flex-col items-center gap-1 text-zinc-200 transition hover:text-white">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-full bg-obsidian-900 border border-white/10 transition group-hover:bg-obsidian-800">
+                    <i data-lucide="message-circle" class="h-5 w-5"></i>
+                  </span>
+                  <span class="reel-comment-count text-xs font-semibold">0</span>
+                </button>
+
+                <button type="button" data-reel-action="share" class="group flex flex-col items-center gap-1 text-zinc-200 transition hover:text-white" title="Copy Reel link">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-full bg-obsidian-900 border border-white/10 transition group-hover:bg-obsidian-800">
+                    <i data-lucide="send" class="h-5 w-5"></i>
+                  </span>
+                  <span class="text-[11px] text-zinc-400">Share</span>
+                </button>
+
+                <button type="button" data-reel-action="download" class="group flex flex-col items-center gap-1 text-emerald-300 transition hover:text-emerald-200" title="Download Reel">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 transition group-hover:bg-emerald-500/25">
+                    <i data-lucide="download" class="h-5 w-5"></i>
+                  </span>
+                  <span class="text-[11px] text-emerald-400">Save</span>
+                </button>
+
+                <button type="button" data-reel-action="source" class="group flex flex-col items-center gap-1 text-zinc-300 transition hover:text-white" title="Open original platform">
+                  <span class="flex h-10 w-10 items-center justify-center rounded-full bg-obsidian-900 border border-white/10 transition group-hover:bg-obsidian-800">
+                    <i data-lucide="external-link" class="h-4 w-4"></i>
+                  </span>
+                </button>
+
+                <div class="mt-1 flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-gradient-to-tr from-brand-500 to-indigo-500 p-1">
+                  <div class="spin-disc flex h-full w-full items-center justify-center rounded-full bg-obsidian-950 text-white">
+                    <i data-lucide="disc-3" class="h-4 w-4"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Up/Down Arrows -->
+              <div class="hidden md:flex flex-col gap-2 self-center ml-2">
+                <button id="instaPrevBtn" type="button" class="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-obsidian-900 text-zinc-200 shadow-lg transition hover:border-white/25 hover:bg-obsidian-800 hover:text-white" title="Previous Reel">
+                  <i data-lucide="chevron-up" class="h-5 w-5"></i>
+                </button>
+                <button id="instaNextBtn" type="button" class="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-obsidian-900 text-zinc-200 shadow-lg transition hover:border-white/25 hover:bg-obsidian-800 hover:text-white" title="Next Reel">
+                  <i data-lucide="chevron-down" class="h-5 w-5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Comments Drawer -->
+            <div id="reelCommentsDrawer" class="hidden w-full max-w-md lg:w-80 xl:w-96 flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-obsidian-900 shadow-2xl animate-fade-up" style="height: min(82vh, 740px);">
+              <div class="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+                <h3 class="text-sm font-bold text-white">Comments <span id="reelDrawerCount" class="ml-1 text-xs font-medium text-zinc-400">0</span></h3>
+                <button id="closeReelCommentsBtn" type="button" class="rounded-lg p-1 text-zinc-400 hover:bg-white/10 hover:text-white">
+                  <i data-lucide="x" class="h-4 w-4"></i>
+                </button>
+              </div>
+              <div id="reelCommentsList" class="flex-1 space-y-3 overflow-y-auto p-4"></div>
+              <form id="reelCommentForm" class="border-t border-white/[0.08] bg-obsidian-950/80 p-3 space-y-2">
+                <input id="reelCommentAuthor" type="text" maxlength="32" placeholder="Your name (optional)" class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+                <div class="flex gap-2">
+                  <input id="reelCommentText" type="text" required maxlength="300" placeholder="Add a comment..." class="flex-1 rounded-xl border border-white/10 bg-obsidian-850 px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+                  <button type="submit" class="rounded-xl bg-brand-500 px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-600">Post</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="mt-4 flex md:hidden items-center gap-3">
+            <button id="instaPrevBtnMobile" type="button" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-obsidian-900 px-4 py-2 text-xs font-semibold text-zinc-200">
+              <i data-lucide="chevron-up" class="h-4 w-4"></i><span>Prev Reel</span>
+            </button>
+            <button id="instaNextBtnMobile" type="button" class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white">
+              <span>Next Reel</span><i data-lucide="chevron-down" class="h-4 w-4"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STANDARD FEED VIEW ================= -->
+      <div id="standardFeedView">
+        <div id="categoryChips" class="mb-5 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
+
+        <section id="quickBanner" class="mb-7 rounded-2xl border border-white/[0.08] bg-gradient-to-r from-obsidian-900 via-obsidian-850 to-indigo-950/30 p-4 sm:p-5">
+          <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div class="min-w-0">
+              <div class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-zinc-300">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                <span>Direct MP4 &bull; YouTube &bull; Instagram &bull; Facebook &bull; Vimeo</span>
+              </div>
+              <h1 class="mt-2 text-lg sm:text-xl font-bold tracking-tight text-white">Paste any video link to deploy instantly</h1>
+              <p class="mt-0.5 text-xs sm:text-sm text-zinc-400">16:9 Cinema Player + Instagram-style Reels vertical feed with downloads, likes, and comments.</p>
+            </div>
+
+            <form id="quickPasteForm" class="flex w-full xl:max-w-md items-center gap-2">
+              <div class="relative flex-1">
+                <i data-lucide="link-2" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i>
+                <input id="quickPasteInput" type="url" placeholder="Paste video URL here..." class="w-full rounded-xl border border-white/10 bg-obsidian-950/90 py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+              </div>
+              <button type="submit" class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-obsidian-950 transition hover:bg-zinc-200 active:scale-95">
+                <span>Deploy</span>
+                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Reels Shelf -->
+        <section id="shortsSection" class="mb-9">
+          <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="insta-ring flex h-7 w-7 items-center justify-center rounded-lg text-white">
+                <i data-lucide="clapperboard" class="h-4 w-4"></i>
+              </span>
+              <h2 class="text-base font-bold tracking-tight text-white">Reels &amp; Shorts</h2>
+              <span id="shortsCountBadge" class="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-zinc-400">0</span>
+            </div>
+            <button id="openFirstShortBtn" type="button" class="inline-flex items-center gap-1 text-xs font-semibold text-brand-400 transition hover:text-brand-300">
+              <span>Open Reels Feed</span>
+              <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+            </button>
+          </div>
+          <div id="shortsGrid" class="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5"></div>
+        </section>
+
+        <!-- Long Videos Grid -->
+        <section id="longSection">
+          <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/20">
+                <i data-lucide="film" class="h-4 w-4"></i>
+              </span>
+              <h2 id="longSectionTitle" class="text-base font-bold tracking-tight text-white">Long Videos</h2>
+              <span id="longCountBadge" class="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-zinc-400">0</span>
+            </div>
+            <button id="bannerShortsBtn" type="button" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-obsidian-900 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:border-white/20 hover:text-white">
+              <i data-lucide="flame" class="h-3.5 w-3.5 text-brand-500"></i>
+              <span>Watch Reels</span>
+            </button>
+          </div>
+          <div id="longGrid" class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"></div>
+        </section>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden my-16 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-obsidian-900/40 p-10 text-center">
+          <div class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-obsidian-800 text-zinc-400">
+            <i data-lucide="video-off" class="h-6 w-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-white">No videos match your filter</h3>
+          <p class="mt-1 max-w-sm text-xs sm:text-sm text-zinc-400">Reset your filters or post a new link from YouTube, Instagram, Facebook, or a direct MP4.</p>
+          <div class="mt-5 flex gap-2">
+            <button id="resetFiltersBtn" type="button" class="rounded-xl border border-white/10 bg-obsidian-800 px-4 py-2 text-xs font-semibold text-white hover:bg-obsidian-700">Reset Filters</button>
+            <button id="emptyPostBtn" type="button" class="rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-600">+ Post Link</button>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
-  <p class="footer">LinkStream · Runs in your browser · No account required</p>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-<script>
-const input=document.getElementById('videoUrl'),screenEl=document.getElementById('screen'),statusEl=document.getElementById('statusText');
-let currentUrl='',hls=null;
-function validUrl(raw){try{const u=new URL(raw.trim());return ['http:','https:'].includes(u.protocol)?u:null}catch{return null}}
-function setStatus(s){statusEl.textContent=s}
-function clearPlayer(){
- if(hls){hls.destroy();hls=null}
- screenEl.innerHTML='<div class="placeholder"><div class="playicon">▷</div><strong>Your video appears here</strong><div style="font-size:13px;margin-top:6px">Paste a link above to get started</div></div>';
- currentUrl='';setStatus('Ready · Waiting for a video link');
-}
-function videoNode(src,type){
- const v=document.createElement('video');v.controls=true;v.autoplay=true;v.playsInline=true;v.preload='metadata';
- v.setAttribute('controlsList','nodownload');
- screenEl.replaceChildren(v);
- if(type==='hls'){
-   if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=src}
-   else if(window.Hls&&Hls.isSupported()){hls=new Hls();hls.loadSource(src);hls.attachMedia(v);hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)setStatus('Stream error · The source may block playback')})}
-   else {setStatus('HLS is not supported in this browser');return}
- }else{v.src=src}
- v.addEventListener('error',()=>setStatus('Playback failed · Check the URL or source permissions'));
- v.addEventListener('loadedmetadata',()=>setStatus('Video loaded · Ready to play'));
- v.addEventListener('playing',()=>setStatus('Playing video'));
- v.addEventListener('waiting',()=>setStatus('Buffering…'));
-}
-function embedNode(src,label){
- const f=document.createElement('iframe');f.src=src;f.title=label+' video player';
- f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
- f.allowFullscreen=true;f.referrerPolicy='strict-origin-when-cross-origin';
- screenEl.replaceChildren(f);setStatus(label+' embed · If blocked, open the original link');
-}
-function play(){
- const u=validUrl(input.value);
- if(!u){setStatus('Please enter a valid http or https URL');return}
- clearPlayer();currentUrl=u.href;
- const host=u.hostname.toLowerCase().replace(/^www\./,'');
- const path=u.pathname;
- let m;
- if(host==='youtu.be'){
-   const id=path.slice(1).split('/')[0];if(id) return embedNode('https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?autoplay=1','YouTube');
- }
- if(host==='youtube.com'||host==='m.youtube.com'){
-   let id=u.searchParams.get('v');
-   if(!id&&(m=path.match(/^\/(embed|shorts|live)\/([^/?]+)/)))id=m[2];
-   if(id)return embedNode('https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?autoplay=1','YouTube');
- }
- if(host==='vimeo.com'||host==='player.vimeo.com'){
-   m=path.match(/\/(?:video\/)?(\d+)/);if(m)return embedNode('https://player.vimeo.com/video/'+m[1]+'?autoplay=1','Vimeo');
- }
- if(host==='dailymotion.com'||host==='dai.ly'){
-   m=host==='dai.ly'?path.match(/^\/([^/?]+)/):path.match(/\/(?:video|embed\/video)\/([^_/?]+)/);
-   if(m)return embedNode('https://www.dailymotion.com/embed/video/'+encodeURIComponent(m[1])+'?autoplay=1','Dailymotion');
- }
- if(host==='twitch.tv'||host==='www.twitch.tv'){
-   const channel=path.split('/').filter(Boolean)[0];
-   if(channel){const parent=location.hostname||'localhost';return embedNode('https://player.twitch.tv/?channel='+encodeURIComponent(channel)+'&parent='+encodeURIComponent(parent)+'&autoplay=false','Twitch')}
- }
- const ext=path.split('.').pop().toLowerCase();
- if(['mp4','webm','ogv','ogg'].includes(ext))return videoNode(u.href,'file');
- if(ext==='m3u8')return videoNode(u.href,'hls');
- if(ext==='mpd')return videoNode(u.href,'dash');
- // Generic embed attempt: only useful when the supplied URL itself is embeddable.
- embedNode(u.href,'Website');
-}
-document.getElementById('playBtn').addEventListener('click',play);
-input.addEventListener('keydown',e=>{if(e.key==='Enter')play()});
-document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.url;input.focus();setStatus('Paste a specific video URL, not just the platform homepage')}));
-document.getElementById('clearBtn').addEventListener('click',()=>{input.value='';clearPlayer()});
-document.getElementById('openBtn').addEventListener('click',()=>{if(currentUrl)window.open(currentUrl,'_blank','noopener,noreferrer');else setStatus('No source URL yet')});
-</script>
+
+  <!-- ================= LONG VIDEO CINEMA PLAYER MODAL ================= -->
+  <div id="playerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-2 sm:p-4 backdrop-blur-md">
+    <div id="playerDialog" class="relative flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/[0.12] bg-obsidian-900 shadow-2xl animate-fade-up">
+      <div class="flex items-center justify-between gap-2 border-b border-white/[0.08] bg-obsidian-950/90 px-4 py-3">
+        <div class="flex min-w-0 items-center gap-2">
+          <span id="playerPlatformBadge" class="shrink-0 rounded-md border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-200">MP4</span>
+          <span id="playerFormatBadge" class="shrink-0 rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300">16:9 Cinema</span>
+          <h3 id="playerTopTitle" class="truncate text-xs sm:text-sm font-semibold text-zinc-200">Video Title</h3>
+        </div>
+        <div class="flex shrink-0 items-center gap-1.5">
+          <button id="toggleYtHostBtn" type="button" class="hidden inline-flex items-center gap-1 rounded-lg border border-white/10 bg-obsidian-800 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-300 transition hover:bg-obsidian-700">
+            <i data-lucide="refresh-cw" class="h-3 w-3"></i>
+            <span id="toggleYtHostLabel">No-Cookie</span>
+          </button>
+          <button id="switchToReelsBtn" type="button" class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-obsidian-800 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-obsidian-700">
+            <i data-lucide="smartphone" class="h-3.5 w-3.5"></i>
+            <span>Reels Mode</span>
+          </button>
+          <button id="closePlayerBtn" type="button" class="rounded-lg p-1.5 text-zinc-400 transition hover:bg-white/10 hover:text-white">
+            <i data-lucide="x" class="h-5 w-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto">
+        <div class="bg-black p-2 sm:p-4">
+          <div id="mediaContainer" class="relative w-full aspect-video min-h-[220px] overflow-hidden rounded-xl bg-obsidian-950 shadow-2xl"></div>
+          <div id="ytOriginBanner" class="hidden mt-2.5 flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2 text-[11px] text-amber-200">
+            <span><strong>Tip:</strong> If an external embed is blocked by the creator or local preview, open it directly on the source site:</span>
+            <a id="ytOriginFallbackLink" href="#" target="_blank" rel="noopener noreferrer" class="shrink-0 rounded-lg bg-amber-400 px-2.5 py-1 text-[11px] font-bold text-obsidian-950 hover:bg-amber-300">Open on Source &rarr;</a>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-5 p-4 sm:p-6">
+          <div>
+            <h2 id="playerTitle" class="text-base sm:text-xl font-bold text-white leading-snug"></h2>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div id="playerAvatar" class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-brand-500 text-xs font-bold text-white ring-2 ring-white/10">C</div>
+                <div>
+                  <div id="playerCreator" class="text-sm font-semibold text-white"></div>
+                  <div id="playerSubMeta" class="text-xs text-zinc-400"></div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="playerLikeBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-obsidian-800 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-obsidian-700">
+                  <i data-lucide="heart" class="h-4 w-4"></i>
+                  <span id="playerLikeCount">0</span>
+                </button>
+                <button id="playerDownloadBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/15 px-3.5 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/25">
+                  <i data-lucide="download" class="h-4 w-4"></i>
+                  <span>Download</span>
+                </button>
+                <button id="playerShareBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-obsidian-800 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-obsidian-700">
+                  <i data-lucide="share-2" class="h-4 w-4"></i>
+                  <span>Copy Link</span>
+                </button>
+                <a id="playerOriginalLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-obsidian-800 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-obsidian-700">
+                  <i data-lucide="external-link" class="h-3.5 w-3.5"></i>
+                  <span>Source</span>
+                </a>
+                <button id="playerDeleteBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 transition hover:bg-red-500/20">
+                  <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                  <span id="playerDeleteLabel">Delete</span>
+                </button>
+              </div>
+            </div>
+            <p id="playerDescription" class="mt-3.5 rounded-xl border border-white/[0.06] bg-obsidian-850 p-3.5 text-xs sm:text-sm text-zinc-300 leading-relaxed"></p>
+          </div>
+
+          <div class="border-t border-white/[0.08] pt-4">
+            <h4 class="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+              <i data-lucide="message-circle" class="h-4 w-4 text-brand-500"></i>
+              <span>Comments</span>
+              <span id="playerCommentCount" class="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold text-zinc-300">0</span>
+            </h4>
+
+            <form id="commentForm" class="mb-4 flex flex-col gap-2 sm:flex-row">
+              <input id="commentAuthorInput" type="text" maxlength="32" placeholder="Your name (optional)" class="w-full sm:w-36 rounded-xl border border-white/10 bg-obsidian-850 px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+              <div class="flex flex-1 gap-2">
+                <input id="commentTextInput" type="text" required maxlength="300" placeholder="Add a comment..." class="flex-1 rounded-xl border border-white/10 bg-obsidian-850 px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+                <button type="submit" class="shrink-0 rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 active:scale-95">Post</button>
+              </div>
+            </form>
+
+            <div id="commentsList" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= POST VIDEO LINK MODAL ================= -->
+  <div id="postModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+    <div class="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border border-white/[0.12] bg-obsidian-900 p-5 sm:p-6 shadow-2xl animate-fade-up">
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Post a Video Link</h2>
+          <p class="text-xs text-zinc-400">Paste any link from YouTube, Instagram, Facebook, Vimeo, or direct MP4/WebM.</p>
+        </div>
+        <button id="closePostModalBtn" type="button" class="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="postForm" class="space-y-4">
+        <div>
+          <label for="postUrlInput" class="mb-1.5 block text-xs font-semibold text-zinc-200">Video Sharing Link *</label>
+          <input id="postUrlInput" type="url" required placeholder="https://... (MP4, YouTube, Shorts, Instagram, Facebook)" class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+          <div id="urlDetectBox" class="hidden mt-2.5 flex items-center gap-3 rounded-xl border border-white/10 bg-obsidian-950/80 p-2.5">
+            <div id="urlDetectThumb" class="h-12 w-20 shrink-0 overflow-hidden rounded-lg bg-obsidian-800 flex items-center justify-center text-zinc-400"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span id="urlDetectPlatform" class="rounded bg-indigo-500/20 px-2 py-0.5 text-[11px] font-bold text-indigo-300"></span>
+                <span id="urlDetectFormat" class="rounded bg-brand-500/20 px-2 py-0.5 text-[11px] font-semibold text-brand-400"></span>
+              </div>
+              <p id="urlDetectHint" class="mt-1 truncate text-[11px] text-zinc-400"></p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <span class="mb-1.5 block text-xs font-semibold text-zinc-200">Player Format</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <label class="cursor-pointer">
+              <input type="radio" name="postFormat" value="long" checked class="peer sr-only" />
+              <div class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-obsidian-850 px-3 py-2.5 text-xs font-semibold text-zinc-300 transition peer-checked:border-indigo-500 peer-checked:bg-indigo-500/15 peer-checked:text-white">
+                <i data-lucide="tv" class="h-4 w-4"></i>
+                <span>Long Video (16:9)</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="postFormat" value="short" class="peer sr-only" />
+              <div class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-obsidian-850 px-3 py-2.5 text-xs font-semibold text-zinc-300 transition peer-checked:border-brand-500 peer-checked:bg-brand-500/15 peer-checked:text-white">
+                <i data-lucide="clapperboard" class="h-4 w-4"></i>
+                <span>Reel / Short (9:16)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label for="postTitleInput" class="mb-1.5 block text-xs font-semibold text-zinc-200">Video Title *</label>
+          <input id="postTitleInput" type="text" required maxlength="120" placeholder="e.g., Official Trailer or Coding Reel" class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label for="postCreatorInput" class="mb-1.5 block text-xs font-semibold text-zinc-200">Creator / Handle</label>
+            <input id="postCreatorInput" type="text" maxlength="40" placeholder="e.g., your_handle" class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3.5 py-2 text-sm text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+          </div>
+          <div>
+            <label for="postCategoryInput" class="mb-1.5 block text-xs font-semibold text-zinc-200">Category</label>
+            <select id="postCategoryInput" class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3 py-2 text-sm text-white focus:border-brand-500/60 focus:outline-none">
+              <option value="Animation">Animation</option>
+              <option value="Space & Science">Space &amp; Science</option>
+              <option value="Tech">Tech</option>
+              <option value="Music">Music</option>
+              <option value="Comedy">Comedy</option>
+              <option value="Education">Education</option>
+              <option value="Vlogs">Vlogs</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="postDownloadUrlInput" class="mb-1.5 block text-xs font-semibold text-zinc-200">Direct Download Link (optional .mp4 / .webm)</label>
+          <input id="postDownloadUrlInput" type="url" placeholder="https://example.com/video.mp4" class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3.5 py-2 text-sm text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="postDescInput" class="mb-1.5 block text-xs font-semibold text-zinc-200">Description (optional)</label>
+          <textarea id="postDescInput" rows="2" maxlength="400" placeholder="Add a short note..." class="w-full rounded-xl border border-white/10 bg-obsidian-850 px-3.5 py-2 text-sm text-white placeholder-zinc-500 focus:border-brand-500/60 focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button id="cancelPostBtn" type="button" class="rounded-xl border border-white/10 bg-obsidian-800 px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:bg-obsidian-700">Cancel</button>
+          <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-600 active:scale-95">
+            <i data-lucide="rocket" class="h-4 w-4"></i>
+            <span>Deploy Video</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= GITHUB PUBLISH MODAL ================= -->
+  <div id="githubModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+    <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.12] bg-obsidian-900 p-5 sm:p-6 shadow-2xl animate-fade-up">
+      <div class="mb-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.08] text-white">
+            <i data-lucide="github" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white">Publish on GitHub Pages</h2>
+            <p class="text-xs text-zinc-400">Single-file static website &bull; JSON export/import</p>
+          </div>
+        </div>
+        <button id="closeGithubModalBtn" type="button" class="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <div class="rounded-xl border border-white/[0.08] bg-obsidian-850 p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300">Backup / Share Feed Data (JSON)</h3>
+        <p class="mt-1 text-xs text-zinc-400">Export or import your posted videos list anytime.</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="exportJsonBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-600">
+            <i data-lucide="download" class="h-3.5 w-3.5"></i>
+            <span>Export JSON</span>
+          </button>
+          <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/10 bg-obsidian-800 px-3.5 py-2 text-xs font-semibold text-zinc-200 hover:bg-obsidian-700">
+            <i data-lucide="upload" class="h-3.5 w-3.5"></i>
+            <span>Import JSON</span>
+            <input id="importJsonInput" type="file" accept=".json,application/json" class="hidden" />
+          </label>
+          <button id="resetDemoBtn" type="button" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-obsidian-900 px-3.5 py-2 text-xs font-semibold text-zinc-400 hover:text-white">
+            <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
+            <span>Reset Starter Feed</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DOWNLOAD OPTIONS MODAL ================= -->
+  <div id="downloadModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+    <div class="w-full max-w-md rounded-2xl border border-white/[0.12] bg-obsidian-900 p-5 shadow-2xl animate-fade-up">
+      <div class="mb-3 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20">
+            <i data-lucide="download" class="h-4 w-4"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-sm sm:text-base font-bold text-white">Download Video</h2>
+            <p id="dlModalSubtitle" class="text-[11px] text-zinc-400 truncate max-w-[250px]"></p>
+          </div>
+        </div>
+        <button id="closeDownloadModalBtn" type="button" class="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <div id="dlDirectSection" class="hidden mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5">
+        <p class="text-xs font-semibold text-emerald-300">Direct video file available</p>
+        <p class="mt-0.5 text-[11px] text-zinc-300">Save the MP4/WebM file directly to your device.</p>
+        <button id="dlDirectActionBtn" type="button" class="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold text-obsidian-950 transition hover:bg-emerald-400">
+          <i data-lucide="download" class="h-4 w-4"></i>
+          <span>Download Video File</span>
+        </button>
+      </div>
+
+      <div id="dlEmbedNotice" class="hidden mb-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-amber-200 leading-relaxed">
+        <strong class="block font-semibold text-amber-300 mb-1">Platform-hosted video</strong>
+        YouTube, Instagram, and Facebook do not allow direct browser file downloads from static websites. Save an offline watch card below or open the source link:
+      </div>
+
+      <div class="space-y-2">
+        <button id="dlSaveShortcutBtn" type="button" class="flex w-full items-center justify-between rounded-xl border border-white/[0.08] bg-obsidian-850 px-3.5 py-2.5 text-xs font-semibold text-zinc-100 transition hover:bg-obsidian-800">
+          <span class="flex items-center gap-2"><i data-lucide="file-code" class="h-4 w-4 text-indigo-400"></i><span>Save Offline Watch Card (.html)</span></span>
+          <i data-lucide="download" class="h-3.5 w-3.5 text-zinc-400"></i>
+        </button>
+        <button id="dlSaveMetaBtn" type="button" class="flex w-full items-center justify-between rounded-xl border border-white/[0.08] bg-obsidian-850 px-3.5 py-2.5 text-xs font-semibold text-zinc-100 transition hover:bg-obsidian-800">
+          <span class="flex items-center gap-2"><i data-lucide="file-text" class="h-4 w-4 text-sky-400"></i><span>Download Video Details &amp; Link (.txt)</span></span>
+          <i data-lucide="download" class="h-3.5 w-3.5 text-zinc-400"></i>
+        </button>
+        <button id="dlCopySourceBtn" type="button" class="flex w-full items-center justify-between rounded-xl border border-white/[0.08] bg-obsidian-850 px-3.5 py-2.5 text-xs font-semibold text-zinc-100 transition hover:bg-obsidian-800">
+          <span class="flex items-center gap-2"><i data-lucide="copy" class="h-4 w-4 text-brand-400"></i><span>Copy Video URL</span></span>
+          <span class="text-[10px] text-zinc-500">Clipboard</span>
+        </button>
+        <a id="dlOpenSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-between rounded-xl border border-white/[0.08] bg-obsidian-850 px-3.5 py-2.5 text-xs font-semibold text-zinc-100 transition hover:bg-obsidian-800">
+          <span class="flex items-center gap-2"><i data-lucide="external-link" class="h-4 w-4 text-zinc-300"></i><span>Open Original Platform</span></span>
+          <span class="text-[10px] text-zinc-500">New tab</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 -translate-x-1/2 translate-y-4 opacity-0 transition-all duration-200">
+    <div id="toastInner" class="flex items-center gap-2 rounded-xl border border-white/15 bg-obsidian-800 px-4 py-2.5 text-xs font-semibold text-white shadow-2xl"></div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const STORAGE_KEY = 'linkstream_videos_v3';
+      const CATEGORIES = ['All', 'Animation', 'Space & Science', 'Tech', 'Music', 'Comedy', 'Education', 'Vlogs', 'Other'];
+
+      // Reliable, CORS-friendly MP4 streams + embed-enabled YouTube videos
+      const STARTER_VIDEOS = [
+        {
+          id: 'vid_mp4_bbb',
+          title: 'Big Buck Bunny — Open Source 3D Film (HD MP4)',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          platform: 'direct',
+          format: 'long',
+          creator: 'blender_foundation',
+          category: 'Animation',
+          downloadUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          description: 'Instant-playing open-source HD MP4 by Blender Foundation. Supports native HTML5 playback and 1-click direct MP4 download.',
+          likes: 58,
+          liked: false,
+          followed: false,
+          createdAt: Date.now() - 86400000 * 1,
+          isStarter: true,
+          comments: [
+            { id: 'c1', author: 'Aarav', text: 'Plays smoothly right away with native controls!', likes: 5, liked: false, createdAt: Date.now() - 3600000 * 4 }
+          ]
+        },
+        {
+          id: 'vid_mp4_tears',
+          title: 'Tears of Steel — Sci-Fi Short Film (HD MP4)',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+          platform: 'direct',
+          format: 'long',
+          creator: 'mango_open_movie',
+          category: 'Space & Science',
+          downloadUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+          description: 'Open-source live-action & VFX sci-fi short film by Blender Institute.',
+          likes: 42,
+          liked: false,
+          followed: false,
+          createdAt: Date.now() - 86400000 * 2,
+          isStarter: true,
+          comments: []
+        },
+        {
+          id: 'vid_yt_nasa',
+          title: 'NASA 4K — Earth From Space (YouTube)',
+          url: 'https://www.youtube.com/watch?v=86YLFOog4GM',
+          platform: 'youtube',
+          format: 'long',
+          creator: 'nasa_official',
+          category: 'Space & Science',
+          downloadUrl: '',
+          description: 'Embed-enabled YouTube stream with fixed origin parameters.',
+          likes: 71,
+          liked: false,
+          followed: false,
+          createdAt: Date.now() - 86400000 * 3,
+          isStarter: true,
+          comments: []
+        },
+        {
+          id: 'vid_reel_blazes',
+          title: 'Action Reel — Fast Cut Highlights 🔥 #reels #cinema',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          platform: 'direct',
+          format: 'short',
+          creator: 'reel_studio',
+          category: 'Tech',
+          downloadUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          description: 'Double-tap to like, tap to play/pause, or use Up/Down arrows to browse Reels.',
+          likes: 124,
+          liked: false,
+          followed: false,
+          createdAt: Date.now() - 3600000 * 5,
+          isStarter: true,
+          comments: []
+        },
+        {
+          id: 'vid_reel_joyrides',
+          title: 'Weekend Joyride Vibes ✨ #reels #vlogs',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+          platform: 'direct',
+          format: 'short',
+          creator: 'travel_daily',
+          category: 'Vlogs',
+          downloadUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+          description: 'Vertical Reel clip with direct download and overlay controls.',
+          likes: 96,
+          liked: false,
+          followed: false,
+          createdAt: Date.now() - 3600000 * 9,
+          isStarter: true,
+          comments: []
+        },
+        {
+          id: 'vid_reel_meltdowns',
+          title: 'Quick Comedy Moment 😂 #shorts #comedy',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+          platform: 'direct',
+          format: 'short',
+          creator: 'daily_laughs',
+          category: 'Comedy',
+          downloadUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+          description: 'Short clip demonstrating seamless vertical Reels switching.',
+          likes: 73,
+          liked: false,
+          followed: false,
+          createdAt: Date.now() - 3600000 * 14,
+          isStarter: true,
+          comments: []
+        }
+      ];
+
+      const state = {
+        videos: [],
+        activeTab: 'all',
+        activeCategory: 'All',
+        activePlatform: 'all',
+        sortBy: 'newest',
+        searchQuery: '',
+        activeVideoId: null,
+        activeReelId: null,
+        reelCommentsOpen: false,
+        reelMuted: true, // Default muted so mobile & desktop autoplay 100% reliably
+        useNoCookieYouTube: false,
+        pendingDeleteConfirm: false,
+        downloadVideoId: null
+      };
+
+      function loadVideos() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (_) {}
+        return JSON.parse(JSON.stringify(STARTER_VIDEOS));
+      }
+
+      function saveVideos() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.videos)); } catch (_) {}
+      }
+
+      function hasValidHttpOrigin() {
+        try {
+          return (window.location.protocol === 'https:' || window.location.protocol === 'http:') &&
+            window.location.origin && window.location.origin !== 'null';
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function buildYouTubeEmbedUrl(videoId, useNoCookie) {
+        const host = useNoCookie ? 'https://www.youtube-nocookie.com' : 'https://www.youtube.com';
+        const params = new URLSearchParams();
+        params.set('rel', '0');
+        params.set('playsinline', '1');
+        params.set('modestbranding', '1');
+        if (hasValidHttpOrigin()) {
+          params.set('origin', window.location.origin);
+        }
+        return host + '/embed/' + encodeURIComponent(videoId) + '?' + params.toString();
+      }
+
+      function parseVideoUrl(rawUrl, useNoCookie) {
+        const urlStr = (rawUrl || '').trim();
+        const result = {
+          valid: false,
+          platform: 'other',
+          platformLabel: 'Open Web',
+          format: 'long',
+          embedType: 'iframe',
+          embedUrl: urlStr,
+          videoId: '',
+          thumbnail: '',
+          hint: 'Will embed inside responsive player'
+        };
+        if (!urlStr) return result;
+
+        let u;
+        try { u = new URL(urlStr); } catch (_) { return result; }
+        result.valid = true;
+        const host = u.hostname.replace(/^www\./, '').replace(/^m\./, '').toLowerCase();
+        const path = u.pathname;
+
+        if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(path)) {
+          result.platform = 'direct';
+          result.platformLabel = 'Direct MP4';
+          result.embedType = 'html5';
+          result.embedUrl = urlStr;
+          result.format = 'long';
+          result.hint = 'Native HTML5 player (instant play + 1-click download)';
+          return result;
+        }
+
+        if (host === 'youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com') {
+          let id = '';
+          let isShort = false;
+          if (host === 'youtu.be') id = path.split('/').filter(Boolean)[0] || '';
+          else if (path.startsWith('/shorts/')) { id = path.split('/')[2] || ''; isShort = true; }
+          else if (path.startsWith('/embed/') || path.startsWith('/live/')) id = path.split('/')[2] || '';
+          else id = u.searchParams.get('v') || '';
+
+          if (id) {
+            result.platform = 'youtube';
+            result.platformLabel = 'YouTube';
+            result.videoId = id;
+            result.format = isShort ? 'short' : 'long';
+            result.embedUrl = buildYouTubeEmbedUrl(id, Boolean(useNoCookie));
+            result.thumbnail = 'https://img.youtube.com/vi/' + encodeURIComponent(id) + '/hqdefault.jpg';
+            result.hint = isShort ? 'YouTube Short (9:16 Reels mode)' : 'YouTube Video (16:9 Cinema mode)';
+            return result;
+          }
+        }
+
+        if (host === 'instagram.com') {
+          const match = path.match(/^\/(reel|reels|p|tv)\/([A-Za-z0-9_-]+)/);
+          if (match) {
+            const kind = match[1] === 'reels' ? 'reel' : match[1];
+            result.platform = 'instagram';
+            result.platformLabel = 'Instagram';
+            result.format = 'short';
+            result.embedUrl = 'https://www.instagram.com/' + kind + '/' + encodeURIComponent(match[2]) + '/embed/';
+            result.hint = 'Instagram ' + (kind === 'reel' ? 'Reel (9:16)' : 'Post') + ' embed';
+            return result;
+          }
+        }
+
+        if (host === 'facebook.com' || host === 'fb.watch' || host === 'web.facebook.com') {
+          const isReel = path.includes('/reel/');
+          result.platform = 'facebook';
+          result.platformLabel = 'Facebook';
+          result.format = isReel ? 'short' : 'long';
+          result.embedUrl = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(urlStr) + '&show_text=false';
+          result.hint = isReel ? 'Facebook Reel (9:16)' : 'Facebook Video embed';
+          return result;
+        }
+
+        if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+          const match = path.match(/\/(\d+)/);
+          if (match) {
+            result.platform = 'vimeo';
+            result.platformLabel = 'Vimeo';
+            result.format = 'long';
+            result.embedUrl = 'https://player.vimeo.com/video/' + match[1];
+            result.hint = 'Vimeo HD embed';
+            return result;
+          }
+        }
+
+        if (host === 'dailymotion.com' || host === 'dai.ly') {
+          const match = host === 'dai.ly' ? path.match(/^\/([A-Za-z0-9]+)/) : path.match(/\/video\/([A-Za-z0-9]+)/);
+          if (match) {
+            result.platform = 'dailymotion';
+            result.platformLabel = 'Dailymotion';
+            result.format = 'long';
+            result.embedUrl = 'https://www.dailymotion.com/embed/video/' + match[1];
+            result.hint = 'Dailymotion embed';
+            return result;
+          }
+        }
+
+        return result;
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function timeAgo(ts) {
+        const diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+      }
+
+      function platformBadgeStyle(platform) {
+        const map = {
+          youtube: { label: 'YouTube', bg: 'bg-red-500/20 text-red-300 border-red-500/30', grad: 'from-red-900/50 via-obsidian-850 to-obsidian-950' },
+          instagram: { label: 'Instagram', bg: 'bg-pink-500/20 text-pink-300 border-pink-500/30', grad: 'from-pink-900/50 via-purple-900/30 to-obsidian-950' },
+          facebook: { label: 'Facebook', bg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', grad: 'from-blue-900/50 via-obsidian-850 to-obsidian-950' },
+          vimeo: { label: 'Vimeo', bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30', grad: 'from-cyan-900/50 via-obsidian-850 to-obsidian-950' },
+          dailymotion: { label: 'Dailymotion', bg: 'bg-sky-500/20 text-sky-300 border-sky-500/30', grad: 'from-sky-900/50 via-obsidian-850 to-obsidian-950' },
+          direct: { label: 'Direct MP4', bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', grad: 'from-emerald-900/50 via-teal-950/40 to-obsidian-950' },
+          other: { label: 'Web Link', bg: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30', grad: 'from-indigo-900/50 via-obsidian-850 to-obsidian-950' }
+        };
+        return map[platform] || map.other;
+      }
+
+      let toastTimer = null;
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastInner').textContent = msg;
+        toast.classList.remove('opacity-0', 'translate-y-4');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.add('opacity-0', 'translate-y-4');
+          toast.classList.remove('opacity-100', 'translate-y-0');
+        }, 2500);
+      }
+
+      function copyText(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { showToast('Link copied!'); }).catch(function () {});
+        }
+      }
+
+      function getFilteredVideos() {
+        const q = state.searchQuery.trim().toLowerCase();
+        const list = state.videos.filter(function (v) {
+          if (state.activeTab === 'liked' && !v.liked) return false;
+          if (state.activeTab === 'long' && v.format !== 'long') return false;
+          if (state.activeTab === 'short' && v.format !== 'short') return false;
+          if (state.activeCategory !== 'All' && v.category !== state.activeCategory) return false;
+          if (state.activePlatform !== 'all' && v.platform !== state.activePlatform) return false;
+          if (q) {
+            const hay = (v.title + ' ' + v.creator + ' ' + v.category + ' ' + v.platform + ' ' + (v.description || '')).toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+
+        if (state.sortBy === 'likes') list.sort(function (a, b) { return b.likes - a.likes; });
+        else if (state.sortBy === 'comments') list.sort(function (a, b) { return b.comments.length - a.comments.length; });
+        else list.sort(function (a, b) { return b.createdAt - a.createdAt; });
+        return list;
+      }
+
+      function renderCategories() {
+        const el = document.getElementById('categoryChips');
+        el.innerHTML = CATEGORIES.map(function (cat) {
+          const active = state.activeCategory === cat;
+          return '<button type="button" data-cat="' + escapeHtml(cat) + '" class="cat-chip shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+            (active ? 'bg-zinc-100 text-obsidian-950 shadow-sm' : 'border border-white/[0.07] bg-obsidian-900 text-zinc-400 hover:border-white/20 hover:text-white') +
+            '">' + escapeHtml(cat) + '</button>';
+        }).join('');
+      }
+
+      function renderTabs() {
+        document.querySelectorAll('.tab-btn').forEach(function (btn) {
+          const active = btn.getAttribute('data-tab') === state.activeTab;
+          btn.className = 'tab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition ' +
+            (active ? 'bg-white/[0.09] text-white ring-1 ring-white/10' : 'text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100');
+        });
+        document.querySelectorAll('.tab-btn-mobile').forEach(function (btn) {
+          const active = btn.getAttribute('data-tab') === state.activeTab;
+          btn.className = 'tab-btn-mobile rounded-lg px-3 py-1.5 text-xs font-semibold transition ' +
+            (active ? 'bg-brand-500 text-white' : 'bg-obsidian-900 text-zinc-400 hover:text-white');
+        });
+
+        document.getElementById('navCountAll').textContent = String(state.videos.length);
+        document.getElementById('navCountLong').textContent = String(state.videos.filter(function (v) { return v.format === 'long'; }).length);
+        document.getElementById('navCountShort').textContent = String(state.videos.filter(function (v) { return v.format === 'short'; }).length);
+        document.getElementById('navCountLiked').textContent = String(state.videos.filter(function (v) { return v.liked; }).length);
+      }
+
+      function buildThumbHtml(video, isShort) {
+        const parsed = parseVideoUrl(video.url);
+        const pStyle = platformBadgeStyle(video.platform);
+        const aspect = isShort ? 'aspect-[9/16]' : 'aspect-video';
+        const thumbUrl = parsed.thumbnail;
+
+        let media = '';
+        if (thumbUrl) {
+          media = '<img src="' + escapeHtml(thumbUrl) + '" alt="' + escapeHtml(video.title) + '" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
+            '<div class="hidden h-full w-full flex-col items-center justify-center bg-gradient-to-br ' + pStyle.grad + ' p-4 text-center">' +
+              '<div class="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/15"><i data-lucide="play" class="h-4 w-4 fill-white ml-0.5"></i></div>' +
+              '<span class="text-[11px] font-bold uppercase tracking-widest text-white/80">' + escapeHtml(pStyle.label) + '</span>' +
+            '</div>';
+        } else {
+          media = '<div class="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br ' + pStyle.grad + ' p-4 text-center">' +
+            '<div class="mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/15"><i data-lucide="play" class="h-5 w-5 fill-white ml-0.5"></i></div>' +
+            '<span class="text-[11px] font-bold uppercase tracking-widest text-white/85">' + escapeHtml(pStyle.label) + '</span>' +
+            '</div>';
+        }
+
+        return '<div class="relative ' + aspect + ' w-full overflow-hidden bg-obsidian-800">' +
+          media +
+          '<div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/15"></div>' +
+          '<span class="absolute left-2.5 top-2.5 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide backdrop-blur-md ' + pStyle.bg + '">' + escapeHtml(pStyle.label) + '</span>' +
+          '<span class="absolute right-2.5 top-2.5 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-100 backdrop-blur-sm">' + (isShort ? 'REEL' : '16:9') + '</span>' +
+          '<div class="absolute inset-0 flex items-center justify-center opacity-0 transition duration-200 group-hover:opacity-100">' +
+            '<div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500/95 text-white shadow-xl shadow-brand-500/40 ring-2 ring-white/20"><i data-lucide="play" class="h-5 w-5 fill-white ml-0.5"></i></div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // ================= REELS VIEW =================
+      function getReelList() {
+        const filtered = getFilteredVideos();
+        if (state.activeTab === 'short' && filtered.length > 0) return filtered;
+        const allShorts = state.videos.filter(function (v) { return v.format === 'short'; });
+        return allShorts.length > 0 ? allShorts : state.videos;
+      }
+
+      function stopReelMedia() {
+        const layer = document.getElementById('reelMediaLayer');
+        if (layer) layer.innerHTML = '';
+      }
+
+      function openInstaReel(videoId) {
+        state.activeTab = 'short';
+        state.activeReelId = videoId;
+        state.reelCommentsOpen = false;
+        renderFeed();
+      }
+
+      function updateMuteButtonUI() {
+        const muteBtn = document.getElementById('reelMuteBtn');
+        muteBtn.innerHTML = state.reelMuted
+          ? '<i data-lucide="volume-x" class="h-3.5 w-3.5"></i><span>Tap for sound</span>'
+          : '<i data-lucide="volume-2" class="h-3.5 w-3.5"></i><span>Sound on</span>';
+      }
+
+      function renderInstaReelsView() {
+        const list = getReelList();
+        const reelsEl = document.getElementById('instaReelsView');
+        const feedEl = document.getElementById('standardFeedView');
+
+        if (list.length === 0) {
+          reelsEl.classList.add('hidden');
+          feedEl.classList.remove('hidden');
+          stopReelMedia();
+          return;
+        }
+
+        feedEl.classList.add('hidden');
+        reelsEl.classList.remove('hidden');
+
+        let idx = list.findIndex(function (v) { return v.id === state.activeReelId; });
+        if (idx === -1) {
+          idx = 0;
+          state.activeReelId = list[0].id;
+        }
+        const video = list[idx];
+        const parsed = parseVideoUrl(video.url, state.useNoCookieYouTube);
+        const pStyle = platformBadgeStyle(video.platform);
+
+        document.getElementById('reelPlatformBadge').textContent = pStyle.label;
+        document.getElementById('reelCounterPill').textContent = (idx + 1) + ' / ' + list.length;
+        document.getElementById('reelAvatar').textContent = (video.creator || 'C').charAt(0).toUpperCase();
+        document.getElementById('reelCreator').textContent = '@' + (video.creator || 'creator').replace(/^@/, '');
+        document.getElementById('reelCaption').textContent = video.title;
+        document.getElementById('reelAudioText').textContent = 'Original Audio • ' + (video.creator || 'LinkStream') + ' • ' + video.category;
+
+        const followBtn = document.getElementById('reelFollowBtn');
+        followBtn.textContent = video.followed ? 'Following' : 'Follow';
+        followBtn.className = video.followed
+          ? 'rounded-lg border border-white/25 bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white transition'
+          : 'rounded-lg border border-white/60 px-2.5 py-0.5 text-[11px] font-semibold text-white transition hover:bg-white/15';
+
+        document.querySelectorAll('.reel-like-count').forEach(function (el) { el.textContent = String(video.likes); });
+        document.querySelectorAll('.reel-comment-count').forEach(function (el) { el.textContent = String(video.comments.length); });
+        document.querySelectorAll('.reel-like-btn').forEach(function (btn) {
+          const icon = btn.querySelector('svg, i');
+          btn.classList.toggle('text-brand-500', Boolean(video.liked));
+          if (icon) {
+            icon.classList.toggle('fill-brand-500', Boolean(video.liked));
+            icon.classList.toggle('text-brand-500', Boolean(video.liked));
+          }
+        });
+
+        const mediaLayer = document.getElementById('reelMediaLayer');
+        const gestureLayer = document.getElementById('reelGestureLayer');
+        const muteBtn = document.getElementById('reelMuteBtn');
+        const pauseIcon = document.getElementById('reelPauseIcon');
+        pauseIcon.classList.add('hidden');
+
+        if (parsed.embedType === 'html5') {
+          mediaLayer.innerHTML =
+            '<video id="activeReelVideo" src="' + escapeHtml(parsed.embedUrl) + '" autoplay loop playsinline preload="auto" referrerpolicy="no-referrer" ' +
+            (state.reelMuted ? 'muted' : '') + ' class="h-full w-full object-cover"></video>' +
+            '<div id="reelErrorOverlay" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center bg-obsidian-950/90 p-5 text-center">' +
+              '<p class="text-xs font-semibold text-zinc-200 mb-2">Stream could not load in browser</p>' +
+              '<a href="' + escapeHtml(video.url) + '" target="_blank" rel="noopener noreferrer" class="rounded-xl bg-brand-500 px-4 py-2 text-xs font-bold text-white">Open Direct Video &rarr;</a>' +
+            '</div>';
+
+          gestureLayer.classList.remove('hidden');
+          muteBtn.classList.remove('hidden');
+          updateMuteButtonUI();
+
+          const vidEl = document.getElementById('activeReelVideo');
+          if (vidEl) {
+            vidEl.muted = state.reelMuted;
+            vidEl.addEventListener('error', function () {
+              const errBox = document.getElementById('reelErrorOverlay');
+              if (errBox) errBox.classList.remove('hidden');
+            });
+            const p = vidEl.play();
+            if (p && p.catch) {
+              p.catch(function () {
+                vidEl.muted = true;
+                state.reelMuted = true;
+                updateMuteButtonUI();
+                lucide.createIcons();
+                vidEl.play().catch(function () {
+                  pauseIcon.classList.remove('hidden');
+                });
+              });
+            }
+          }
+        } else {
+          mediaLayer.innerHTML = '<iframe src="' + escapeHtml(parsed.embedUrl) + '" title="' + escapeHtml(video.title) + '" class="h-full w-full border-0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+          gestureLayer.classList.add('hidden');
+          muteBtn.classList.add('hidden');
+        }
+
+        const drawer = document.getElementById('reelCommentsDrawer');
+        drawer.classList.toggle('hidden', !state.reelCommentsOpen);
+        drawer.classList.toggle('flex', state.reelCommentsOpen);
+        renderReelComments(video);
+        lucide.createIcons();
+      }
+
+      function renderReelComments(video) {
+        document.getElementById('reelDrawerCount').textContent = String(video.comments.length);
+        const list = document.getElementById('reelCommentsList');
+        if (video.comments.length === 0) {
+          list.innerHTML = '<p class="py-10 text-center text-xs text-zinc-500">No comments yet.<br/>Be the first to comment on this Reel!</p>';
+          return;
+        }
+        list.innerHTML = video.comments.map(function (c) {
+          const initial = (c.author || 'V').charAt(0).toUpperCase();
+          return '<div class="flex items-start gap-2.5">' +
+            '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-obsidian-700 text-[11px] font-bold text-zinc-200">' + escapeHtml(initial) + '</div>' +
+            '<div class="min-w-0 flex-1">' +
+              '<div class="flex items-center justify-between gap-2">' +
+                '<span class="text-xs font-semibold text-white">' + escapeHtml(c.author || 'Viewer') + ' <span class="ml-1 font-normal text-[10px] text-zinc-500">' + timeAgo(c.createdAt) + '</span></span>' +
+                '<div class="flex items-center gap-2">' +
+                  '<button type="button" data-reel-like-cmt="' + escapeHtml(c.id) + '" class="inline-flex items-center gap-1 text-[11px] ' + (c.liked ? 'text-brand-500 font-semibold' : 'text-zinc-400 hover:text-white') + '">' +
+                    '<i data-lucide="heart" class="h-3 w-3 ' + (c.liked ? 'fill-brand-500' : '') + '"></i><span>' + c.likes + '</span>' +
+                  '</button>' +
+                  '<button type="button" data-reel-del-cmt="' + escapeHtml(c.id) + '" class="text-zinc-500 hover:text-red-400"><i data-lucide="x" class="h-3 w-3"></i></button>' +
+                '</div>' +
+              '</div>' +
+              '<p class="mt-0.5 text-xs text-zinc-300 leading-relaxed break-words">' + escapeHtml(c.text) + '</p>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        lucide.createIcons();
+      }
+
+      function stepReel(dir) {
+        const list = getReelList();
+        if (list.length === 0) return;
+        const idx = list.findIndex(function (v) { return v.id === state.activeReelId; });
+        const nextIdx = idx === -1 ? 0 : (idx + dir + list.length) % list.length;
+        state.activeReelId = list[nextIdx].id;
+        renderInstaReelsView();
+      }
+
+      function renderFeed() {
+        renderTabs();
+        renderCategories();
+
+        if (state.activeTab === 'short') {
+          renderInstaReelsView();
+          return;
+        }
+
+        stopReelMedia();
+        document.getElementById('instaReelsView').classList.add('hidden');
+        document.getElementById('standardFeedView').classList.remove('hidden');
+
+        const filtered = getFilteredVideos();
+        const shorts = filtered.filter(function (v) { return v.format === 'short'; });
+        const longs = filtered.filter(function (v) { return v.format === 'long'; });
+
+        const shortsSection = document.getElementById('shortsSection');
+        const longSection = document.getElementById('longSection');
+        const emptyState = document.getElementById('emptyState');
+        const shortsGrid = document.getElementById('shortsGrid');
+        const longGrid = document.getElementById('longGrid');
+
+        document.getElementById('shortsCountBadge').textContent = String(shorts.length);
+        document.getElementById('longCountBadge').textContent = String(longs.length);
+        document.getElementById('longSectionTitle').textContent = state.activeTab === 'liked' ? 'Liked Long Videos' : 'Long Videos';
+
+        if (filtered.length === 0) {
+          shortsSection.classList.add('hidden');
+          longSection.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          lucide.createIcons();
+          return;
+        }
+        emptyState.classList.add('hidden');
+
+        if ((state.activeTab === 'all' || state.activeTab === 'liked') && shorts.length > 0) {
+          shortsSection.classList.remove('hidden');
+          shortsGrid.innerHTML = shorts.map(function (v) {
+            return '<article data-open-id="' + escapeHtml(v.id) + '" data-format="short" class="video-card group cursor-pointer overflow-hidden rounded-2xl border border-white/[0.08] bg-obsidian-900 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl hover:shadow-black/40">' +
+              buildThumbHtml(v, true) +
+              '<div class="p-3">' +
+                '<h3 class="line-clamp-2 text-xs sm:text-[13px] font-semibold text-zinc-100 leading-snug">' + escapeHtml(v.title) + '</h3>' +
+                '<div class="mt-2.5 flex items-center justify-between text-[11px] text-zinc-400">' +
+                  '<span class="truncate max-w-[52%]">@' + escapeHtml(v.creator) + '</span>' +
+                  '<div class="flex items-center gap-2">' +
+                    '<button type="button" data-quick-like="' + escapeHtml(v.id) + '" class="quick-like-btn inline-flex items-center gap-1 transition hover:text-brand-500 ' + (v.liked ? 'text-brand-500 font-semibold' : '') + '">' +
+                      '<i data-lucide="heart" class="h-3.5 w-3.5 ' + (v.liked ? 'fill-brand-500' : '') + '"></i>' +
+                      '<span>' + v.likes + '</span>' +
+                    '</button>' +
+                    '<button type="button" data-quick-download="' + escapeHtml(v.id) + '" class="quick-download-btn inline-flex items-center transition hover:text-emerald-400">' +
+                      '<i data-lucide="download" class="h-3.5 w-3.5"></i>' +
+                    '</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</article>';
+          }).join('');
+        } else {
+          shortsSection.classList.add('hidden');
+        }
+
+        if ((state.activeTab === 'all' || state.activeTab === 'long' || state.activeTab === 'liked') && longs.length > 0) {
+          longSection.classList.remove('hidden');
+          longGrid.innerHTML = longs.map(function (v) {
+            const initial = (v.creator || 'C').charAt(0).toUpperCase();
+            return '<article data-open-id="' + escapeHtml(v.id) + '" data-format="long" class="video-card group cursor-pointer overflow-hidden rounded-2xl border border-white/[0.08] bg-obsidian-900 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl hover:shadow-black/40">' +
+              buildThumbHtml(v, false) +
+              '<div class="p-4">' +
+                '<div class="flex items-start gap-3">' +
+                  '<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-brand-500 text-xs font-bold text-white ring-1 ring-white/15">' + escapeHtml(initial) + '</div>' +
+                  '<div class="min-w-0 flex-1">' +
+                    '<h3 class="line-clamp-2 text-sm font-semibold text-zinc-100 leading-snug">' + escapeHtml(v.title) + '</h3>' +
+                    '<p class="mt-1 text-xs text-zinc-400 truncate">@' + escapeHtml(v.creator) + ' &bull; ' + escapeHtml(v.category) + ' &bull; ' + timeAgo(v.createdAt) + '</p>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mt-3.5 flex items-center justify-between border-t border-white/[0.06] pt-3 text-xs text-zinc-400">' +
+                  '<div class="flex items-center gap-3">' +
+                    '<button type="button" data-quick-like="' + escapeHtml(v.id) + '" class="quick-like-btn inline-flex items-center gap-1.5 rounded-lg bg-obsidian-800 px-2.5 py-1 transition hover:text-brand-500 ' + (v.liked ? 'text-brand-500 font-semibold' : '') + '">' +
+                      '<i data-lucide="heart" class="h-3.5 w-3.5 ' + (v.liked ? 'fill-brand-500' : '') + '"></i>' +
+                      '<span>' + v.likes + '</span>' +
+                    '</button>' +
+                    '<span class="inline-flex items-center gap-1"><i data-lucide="message-circle" class="h-3.5 w-3.5"></i>' + v.comments.length + '</span>' +
+                  '</div>' +
+                  '<div class="flex items-center gap-2">' +
+                    '<button type="button" data-quick-download="' + escapeHtml(v.id) + '" class="quick-download-btn inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 transition hover:bg-emerald-500/20">' +
+                      '<i data-lucide="download" class="h-3.5 w-3.5"></i><span>Download</span>' +
+                    '</button>' +
+                    '<span class="text-[11px] font-semibold text-zinc-300 group-hover:text-white">Watch &rarr;</span>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</article>';
+          }).join('');
+        } else {
+          longSection.classList.add('hidden');
+        }
+
+        lucide.createIcons();
+      }
+
+      // ================= LONG VIDEO PLAYER MODAL =================
+      function openLongPlayer(videoId) {
+        const video = state.videos.find(function (v) { return v.id === videoId; });
+        if (!video) return;
+        state.activeVideoId = videoId;
+        state.useNoCookieYouTube = false;
+        state.pendingDeleteConfirm = false;
+        renderLongPlayerModal();
+        document.getElementById('playerModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLongPlayer() {
+        document.getElementById('playerModal').classList.add('hidden');
+        document.getElementById('mediaContainer').innerHTML = '';
+        state.activeVideoId = null;
+        state.pendingDeleteConfirm = false;
+        document.body.style.overflow = '';
+      }
+
+      function renderLongPlayerModal() {
+        const video = state.videos.find(function (v) { return v.id === state.activeVideoId; });
+        if (!video) return;
+        const parsed = parseVideoUrl(video.url, state.useNoCookieYouTube);
+        const pStyle = platformBadgeStyle(video.platform);
+
+        document.getElementById('playerPlatformBadge').textContent = pStyle.label;
+        document.getElementById('playerTopTitle').textContent = video.title;
+
+        const ytHostBtn = document.getElementById('toggleYtHostBtn');
+        const ytOriginBanner = document.getElementById('ytOriginBanner');
+        if (parsed.platform === 'youtube') {
+          ytHostBtn.classList.remove('hidden');
+          document.getElementById('toggleYtHostLabel').textContent = state.useNoCookieYouTube ? 'Standard YT' : 'No-Cookie';
+          ytOriginBanner.classList.remove('hidden');
+          document.getElementById('ytOriginFallbackLink').href = video.url;
+        } else {
+          ytHostBtn.classList.add('hidden');
+          ytOriginBanner.classList.add('hidden');
+        }
+
+        const mediaContainer = document.getElementById('mediaContainer');
+        if (parsed.embedType === 'html5') {
+          mediaContainer.innerHTML =
+            '<video id="activeCinemaVideo" src="' + escapeHtml(parsed.embedUrl) + '" controls autoplay playsinline preload="auto" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full bg-black object-contain"></video>' +
+            '<div id="cinemaErrorOverlay" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-obsidian-950/95 p-6 text-center">' +
+              '<p class="text-sm font-semibold text-white mb-2">Direct video stream failed to load</p>' +
+              '<a href="' + escapeHtml(video.url) + '" target="_blank" rel="noopener noreferrer" class="rounded-xl bg-brand-500 px-4 py-2 text-xs font-bold text-white">Open Video Link Directly &rarr;</a>' +
+            '</div>';
+          const vidEl = document.getElementById('activeCinemaVideo');
+          if (vidEl) {
+            vidEl.addEventListener('error', function () {
+              const errBox = document.getElementById('cinemaErrorOverlay');
+              if (errBox) errBox.classList.remove('hidden');
+            });
+            const p = vidEl.play();
+            if (p && p.catch) {
+              p.catch(function () {
+                vidEl.muted = true;
+                vidEl.play().catch(function () {});
+              });
+            }
+          }
+        } else {
+          mediaContainer.innerHTML = '<iframe src="' + escapeHtml(parsed.embedUrl) + '" title="' + escapeHtml(video.title) + '" class="absolute inset-0 h-full w-full border-0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+        }
+
+        document.getElementById('playerTitle').textContent = video.title;
+        document.getElementById('playerAvatar').textContent = (video.creator || 'C').charAt(0).toUpperCase();
+        document.getElementById('playerCreator').textContent = '@' + (video.creator || 'creator').replace(/^@/, '');
+        document.getElementById('playerSubMeta').textContent = video.category + ' • Posted ' + timeAgo(video.createdAt);
+        document.getElementById('playerOriginalLink').href = video.url;
+
+        const descEl = document.getElementById('playerDescription');
+        if (video.description && video.description.trim()) {
+          descEl.textContent = video.description;
+          descEl.classList.remove('hidden');
+        } else {
+          descEl.classList.add('hidden');
+        }
+
+        const likeBtn = document.getElementById('playerLikeBtn');
+        likeBtn.className = 'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ' +
+          (video.liked ? 'border-brand-500/40 bg-brand-500/15 text-brand-400' : 'border-white/10 bg-obsidian-800 text-zinc-200 hover:bg-obsidian-700');
+        document.getElementById('playerLikeCount').textContent = String(video.likes);
+        document.getElementById('playerDeleteLabel').textContent = state.pendingDeleteConfirm ? 'Confirm Delete?' : 'Delete';
+
+        renderLongComments(video);
+        lucide.createIcons();
+      }
+
+      function renderLongComments(video) {
+        document.getElementById('playerCommentCount').textContent = String(video.comments.length);
+        const list = document.getElementById('commentsList');
+        if (video.comments.length === 0) {
+          list.innerHTML = '<p class="rounded-xl border border-dashed border-white/10 py-6 text-center text-xs text-zinc-500">No comments yet. Start the conversation!</p>';
+          return;
+        }
+        list.innerHTML = video.comments.map(function (c) {
+          const initial = (c.author || 'V').charAt(0).toUpperCase();
+          return '<div class="flex items-start gap-2.5 rounded-xl border border-white/[0.05] bg-obsidian-850 p-3">' +
+            '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-obsidian-700 text-[11px] font-bold text-zinc-200">' + escapeHtml(initial) + '</div>' +
+            '<div class="min-w-0 flex-1">' +
+              '<div class="flex items-center justify-between gap-2">' +
+                '<span class="text-xs font-semibold text-white">' + escapeHtml(c.author || 'Viewer') + ' <span class="ml-1 font-normal text-[10px] text-zinc-500">' + timeAgo(c.createdAt) + '</span></span>' +
+                '<div class="flex items-center gap-2">' +
+                  '<button type="button" data-like-comment="' + escapeHtml(c.id) + '" class="inline-flex items-center gap-1 text-[11px] transition hover:text-brand-400 ' + (c.liked ? 'text-brand-400 font-semibold' : 'text-zinc-400') + '">' +
+                    '<i data-lucide="thumbs-up" class="h-3 w-3"></i><span>' + c.likes + '</span>' +
+                  '</button>' +
+                  '<button type="button" data-del-comment="' + escapeHtml(c.id) + '" class="text-[11px] text-zinc-500 hover:text-red-400"><i data-lucide="x" class="h-3.5 w-3.5"></i></button>' +
+                '</div>' +
+              '</div>' +
+              '<p class="mt-1 text-xs text-zinc-300 leading-relaxed break-words">' + escapeHtml(c.text) + '</p>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        lucide.createIcons();
+      }
+
+      function toggleLike(videoId) {
+        const v = state.videos.find(function (item) { return item.id === videoId; });
+        if (!v) return;
+        v.liked = !v.liked;
+        v.likes = Math.max(0, v.likes + (v.liked ? 1 : -1));
+        saveVideos();
+        if (state.activeTab === 'short') {
+          renderTabs();
+          document.querySelectorAll('.reel-like-count').forEach(function (el) { el.textContent = String(v.likes); });
+          document.querySelectorAll('.reel-like-btn').forEach(function (btn) {
+            btn.classList.toggle('text-brand-500', Boolean(v.liked));
+            const icon = btn.querySelector('svg, i');
+            if (icon) {
+              icon.classList.toggle('fill-brand-500', Boolean(v.liked));
+              icon.classList.toggle('text-brand-500', Boolean(v.liked));
+            }
+          });
+        } else {
+          renderFeed();
+          if (state.activeVideoId === videoId) renderLongPlayerModal();
+        }
+      }
+
+      // ================= POST & DOWNLOAD MODALS =================
+      function openPostModal(prefillUrl) {
+        document.getElementById('postModal').classList.remove('hidden');
+        const urlInput = document.getElementById('postUrlInput');
+        if (prefillUrl) {
+          urlInput.value = prefillUrl;
+          handleUrlPreview();
+          document.getElementById('postTitleInput').focus();
+        } else {
+          urlInput.focus();
+        }
+      }
+
+      function closePostModal() {
+        document.getElementById('postModal').classList.add('hidden');
+        document.getElementById('postForm').reset();
+        document.getElementById('urlDetectBox').classList.add('hidden');
+      }
+
+      function handleUrlPreview() {
+        const val = document.getElementById('postUrlInput').value;
+        const box = document.getElementById('urlDetectBox');
+        const parsed = parseVideoUrl(val);
+        if (!parsed.valid) { box.classList.add('hidden'); return; }
+        box.classList.remove('hidden');
+        document.getElementById('urlDetectPlatform').textContent = parsed.platformLabel;
+        document.getElementById('urlDetectFormat').textContent = parsed.format === 'short' ? 'Auto: 9:16 Reel' : 'Auto: 16:9 Long';
+        document.getElementById('urlDetectHint').textContent = parsed.hint;
+        const radio = document.querySelector('input[name="postFormat"][value="' + parsed.format + '"]');
+        if (radio) radio.checked = true;
+        const thumbEl = document.getElementById('urlDetectThumb');
+        if (parsed.thumbnail) {
+          thumbEl.innerHTML = '<img src="' + escapeHtml(parsed.thumbnail) + '" alt="Preview" class="h-full w-full object-cover" />';
+        } else {
+          thumbEl.innerHTML = '<i data-lucide="film" class="h-5 w-5 text-indigo-400"></i>';
+          lucide.createIcons();
+        }
+      }
+
+      function sanitizeFilename(name) {
+        return String(name || 'video').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'video';
+      }
+
+      function triggerBlobDownload(content, filename, mime) {
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function triggerDirectDownload(fileUrl, title) {
+        const a = document.createElement('a');
+        a.href = fileUrl;
+        a.download = sanitizeFilename(title);
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Starting video download...');
+      }
+
+      function getDirectFileUrl(video) {
+        if (!video) return '';
+        if (video.downloadUrl && video.downloadUrl.trim()) return video.downloadUrl.trim();
+        const parsed = parseVideoUrl(video.url);
+        return parsed.embedType === 'html5' ? video.url : '';
+      }
+
+      function openDownloadModal(videoId) {
+        const video = state.videos.find(function (v) { return v.id === videoId; });
+        if (!video) return;
+        state.downloadVideoId = videoId;
+        const directUrl = getDirectFileUrl(video);
+        document.getElementById('dlModalSubtitle').textContent = video.title;
+        document.getElementById('dlOpenSourceLink').href = video.url;
+        document.getElementById('dlDirectSection').classList.toggle('hidden', !directUrl);
+        document.getElementById('dlEmbedNotice').classList.toggle('hidden', Boolean(directUrl));
+        document.getElementById('downloadModal').classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      function closeDownloadModal() {
+        document.getElementById('downloadModal').classList.add('hidden');
+        state.downloadVideoId = null;
+      }
+
+      // ================= EVENTS =================
+      function resetAllFilters() {
+        state.activeTab = 'all';
+        state.activeCategory = 'All';
+        state.activePlatform = 'all';
+        state.searchQuery = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('platformFilter').value = 'all';
+        document.getElementById('platformFilterMobile').value = 'all';
+        document.getElementById('clearSearchBtn').classList.add('hidden');
+        renderFeed();
+      }
+
+      document.getElementById('brandBtn').addEventListener('click', resetAllFilters);
+      document.getElementById('resetFiltersBtn').addEventListener('click', resetAllFilters);
+
+      document.getElementById('searchInput').addEventListener('input', function (e) {
+        state.searchQuery = e.target.value;
+        document.getElementById('clearSearchBtn').classList.toggle('hidden', !state.searchQuery);
+        renderFeed();
+      });
+
+      document.getElementById('clearSearchBtn').addEventListener('click', function () {
+        state.searchQuery = '';
+        document.getElementById('searchInput').value = '';
+        this.classList.add('hidden');
+        renderFeed();
+      });
+
+      document.getElementById('sortSelect').addEventListener('change', function (e) {
+        state.sortBy = e.target.value;
+        renderFeed();
+      });
+
+      document.querySelectorAll('.tab-btn, .tab-btn-mobile').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.activeTab = btn.getAttribute('data-tab');
+          state.reelCommentsOpen = false;
+          renderFeed();
+        });
+      });
+
+      function syncPlatform(val) {
+        state.activePlatform = val;
+        document.getElementById('platformFilter').value = val;
+        document.getElementById('platformFilterMobile').value = val;
+        renderFeed();
+      }
+      document.getElementById('platformFilter').addEventListener('change', function (e) { syncPlatform(e.target.value); });
+      document.getElementById('platformFilterMobile').addEventListener('change', function (e) { syncPlatform(e.target.value); });
+
+      document.getElementById('categoryChips').addEventListener('click', function (e) {
+        const chip = e.target.closest('.cat-chip');
+        if (!chip) return;
+        state.activeCategory = chip.getAttribute('data-cat');
+        renderFeed();
+      });
+
+      document.getElementById('quickPasteForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const url = document.getElementById('quickPasteInput').value.trim();
+        document.getElementById('quickPasteInput').value = '';
+        openPostModal(url);
+      });
+
+      function openReelsTab() {
+        const firstShort = state.videos.find(function (v) { return v.format === 'short'; });
+        openInstaReel(firstShort ? firstShort.id : (state.videos[0] && state.videos[0].id));
+      }
+      document.getElementById('bannerShortsBtn').addEventListener('click', openReelsTab);
+      document.getElementById('openFirstShortBtn').addEventListener('click', openReelsTab);
+
+      document.getElementById('standardFeedView').addEventListener('click', function (e) {
+        const dlBtn = e.target.closest('.quick-download-btn');
+        if (dlBtn) { e.stopPropagation(); openDownloadModal(dlBtn.getAttribute('data-quick-download')); return; }
+        const likeBtn = e.target.closest('.quick-like-btn');
+        if (likeBtn) { e.stopPropagation(); toggleLike(likeBtn.getAttribute('data-quick-like')); return; }
+        const card = e.target.closest('.video-card');
+        if (card) {
+          const id = card.getAttribute('data-open-id');
+          const fmt = card.getAttribute('data-format');
+          if (fmt === 'short') openInstaReel(id);
+          else openLongPlayer(id);
+        }
+      });
+
+      let lastReelTap = 0;
+      let tapTimer = null;
+      document.getElementById('reelGestureLayer').addEventListener('click', function () {
+        const now = Date.now();
+        if (now - lastReelTap < 280) {
+          clearTimeout(tapTimer);
+          lastReelTap = 0;
+          const v = state.videos.find(function (x) { return x.id === state.activeReelId; });
+          if (v && !v.liked) toggleLike(v.id);
+          const burst = document.getElementById('reelHeartBurst');
+          burst.classList.remove('hidden', 'heart-burst');
+          void burst.offsetWidth;
+          burst.classList.add('heart-burst');
+          setTimeout(function () { burst.classList.add('hidden'); }, 720);
+        } else {
+          lastReelTap = now;
+          tapTimer = setTimeout(function () {
+            const vid = document.getElementById('activeReelVideo');
+            const pauseIcon = document.getElementById('reelPauseIcon');
+            if (!vid) return;
+            if (vid.paused) { vid.play().catch(function () {}); pauseIcon.classList.add('hidden'); }
+            else { vid.pause(); pauseIcon.classList.remove('hidden'); }
+          }, 260);
+        }
+      });
+
+      document.getElementById('reelMuteBtn').addEventListener('click', function () {
+        state.reelMuted = !state.reelMuted;
+        const vid = document.getElementById('activeReelVideo');
+        if (vid) {
+          vid.muted = state.reelMuted;
+          if (!state.reelMuted && vid.paused) vid.play().catch(function () {});
+        }
+        updateMuteButtonUI();
+        lucide.createIcons();
+      });
+
+      document.getElementById('reelFollowBtn').addEventListener('click', function () {
+        const v = state.videos.find(function (x) { return x.id === state.activeReelId; });
+        if (!v) return;
+        v.followed = !v.followed;
+        saveVideos();
+        this.textContent = v.followed ? 'Following' : 'Follow';
+        this.className = v.followed
+          ? 'rounded-lg border border-white/25 bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white transition'
+          : 'rounded-lg border border-white/60 px-2.5 py-0.5 text-[11px] font-semibold text-white transition hover:bg-white/15';
+      });
+
+      document.getElementById('instaReelsView').addEventListener('click', function (e) {
+        const actBtn = e.target.closest('[data-reel-action]');
+        if (!actBtn) return;
+        const action = actBtn.getAttribute('data-reel-action');
+        const v = state.videos.find(function (x) { return x.id === state.activeReelId; });
+        if (!v) return;
+
+        if (action === 'like') toggleLike(v.id);
+        else if (action === 'comment') {
+          state.reelCommentsOpen = !state.reelCommentsOpen;
+          const drawer = document.getElementById('reelCommentsDrawer');
+          drawer.classList.toggle('hidden', !state.reelCommentsOpen);
+          drawer.classList.toggle('flex', state.reelCommentsOpen);
+          if (state.reelCommentsOpen) renderReelComments(v);
+        } else if (action === 'share') copyText(v.url);
+        else if (action === 'download') openDownloadModal(v.id);
+        else if (action === 'source') window.open(v.url, '_blank', 'noopener,noreferrer');
+      });
+
+      document.getElementById('closeReelCommentsBtn').addEventListener('click', function () {
+        state.reelCommentsOpen = false;
+        const drawer = document.getElementById('reelCommentsDrawer');
+        drawer.classList.add('hidden');
+        drawer.classList.remove('flex');
+      });
+
+      document.getElementById('reelCommentForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const v = state.videos.find(function (x) { return x.id === state.activeReelId; });
+        if (!v) return;
+        const author = document.getElementById('reelCommentAuthor').value.trim() || 'Viewer';
+        const text = document.getElementById('reelCommentText').value.trim();
+        if (!text) return;
+        v.comments.unshift({ id: 'cmt_' + Date.now(), author: author, text: text, likes: 0, liked: false, createdAt: Date.now() });
+        saveVideos();
+        document.getElementById('reelCommentText').value = '';
+        document.querySelectorAll('.reel-comment-count').forEach(function (el) { el.textContent = String(v.comments.length); });
+        renderReelComments(v);
+      });
+
+      document.getElementById('reelCommentsList').addEventListener('click', function (e) {
+        const v = state.videos.find(function (x) { return x.id === state.activeReelId; });
+        if (!v) return;
+        const likeBtn = e.target.closest('[data-reel-like-cmt]');
+        if (likeBtn) {
+          const c = v.comments.find(function (x) { return x.id === likeBtn.getAttribute('data-reel-like-cmt'); });
+          if (c) { c.liked = !c.liked; c.likes = Math.max(0, c.likes + (c.liked ? 1 : -1)); saveVideos(); renderReelComments(v); }
+          return;
+        }
+        const delBtn = e.target.closest('[data-reel-del-cmt]');
+        if (delBtn) {
+          v.comments = v.comments.filter(function (x) { return x.id !== delBtn.getAttribute('data-reel-del-cmt'); });
+          saveVideos();
+          document.querySelectorAll('.reel-comment-count').forEach(function (el) { el.textContent = String(v.comments.length); });
+          renderReelComments(v);
+        }
+      });
+
+      document.getElementById('instaPrevBtn').addEventListener('click', function () { stepReel(-1); });
+      document.getElementById('instaNextBtn').addEventListener('click', function () { stepReel(1); });
+      document.getElementById('instaPrevBtnMobile').addEventListener('click', function () { stepReel(-1); });
+      document.getElementById('instaNextBtnMobile').addEventListener('click', function () { stepReel(1); });
+
+      let wheelLock = 0;
+      document.getElementById('reelViewport').addEventListener('wheel', function (e) {
+        if (Math.abs(e.deltaY) < 25) return;
+        const now = Date.now();
+        if (now - wheelLock < 500) return;
+        wheelLock = now;
+        e.preventDefault();
+        stepReel(e.deltaY > 0 ? 1 : -1);
+      }, { passive: false });
+
+      let touchStartY = 0;
+      document.getElementById('reelViewport').addEventListener('touchstart', function (e) {
+        touchStartY = e.changedTouches[0].clientY;
+      }, { passive: true });
+      document.getElementById('reelViewport').addEventListener('touchend', function (e) {
+        const diff = touchStartY - e.changedTouches[0].clientY;
+        if (Math.abs(diff) > 55) stepReel(diff > 0 ? 1 : -1);
+      }, { passive: true });
+
+      document.getElementById('closePlayerBtn').addEventListener('click', closeLongPlayer);
+      document.getElementById('playerModal').addEventListener('click', function (e) { if (e.target === this) closeLongPlayer(); });
+
+      document.getElementById('switchToReelsBtn').addEventListener('click', function () {
+        const id = state.activeVideoId;
+        closeLongPlayer();
+        if (id) openInstaReel(id);
+      });
+
+      document.getElementById('toggleYtHostBtn').addEventListener('click', function () {
+        state.useNoCookieYouTube = !state.useNoCookieYouTube;
+        renderLongPlayerModal();
+        showToast(state.useNoCookieYouTube ? 'Switched to YouTube No-Cookie embed' : 'Switched to standard YouTube embed');
+      });
+
+      document.getElementById('playerLikeBtn').addEventListener('click', function () { if (state.activeVideoId) toggleLike(state.activeVideoId); });
+      document.getElementById('playerDownloadBtn').addEventListener('click', function () { if (state.activeVideoId) openDownloadModal(state.activeVideoId); });
+      document.getElementById('playerShareBtn').addEventListener('click', function () {
+        const v = state.videos.find(function (x) { return x.id === state.activeVideoId; });
+        if (v) copyText(v.url);
+      });
+      document.getElementById('playerDeleteBtn').addEventListener('click', function () {
+        if (!state.activeVideoId) return;
+        if (!state.pendingDeleteConfirm) {
+          state.pendingDeleteConfirm = true;
+          document.getElementById('playerDeleteLabel').textContent = 'Confirm Delete?';
+          return;
+        }
+        state.videos = state.videos.filter(function (v) { return v.id !== state.activeVideoId; });
+        saveVideos();
+        closeLongPlayer();
+        renderFeed();
+        showToast('Video removed.');
+      });
+
+      document.getElementById('commentForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const video = state.videos.find(function (v) { return v.id === state.activeVideoId; });
+        if (!video) return;
+        const author = document.getElementById('commentAuthorInput').value.trim() || 'Viewer';
+        const text = document.getElementById('commentTextInput').value.trim();
+        if (!text) return;
+        video.comments.unshift({ id: 'cmt_' + Date.now(), author: author, text: text, likes: 0, liked: false, createdAt: Date.now() });
+        saveVideos();
+        document.getElementById('commentTextInput').value = '';
+        renderLongComments(video);
+        renderFeed();
+      });
+
+      document.getElementById('commentsList').addEventListener('click', function (e) {
+        const video = state.videos.find(function (v) { return v.id === state.activeVideoId; });
+        if (!video) return;
+        const likeBtn = e.target.closest('[data-like-comment]');
+        if (likeBtn) {
+          const c = video.comments.find(function (x) { return x.id === likeBtn.getAttribute('data-like-comment'); });
+          if (c) { c.liked = !c.liked; c.likes = Math.max(0, c.likes + (c.liked ? 1 : -1)); saveVideos(); renderLongComments(video); }
+          return;
+        }
+        const delBtn = e.target.closest('[data-del-comment]');
+        if (delBtn) {
+          video.comments = video.comments.filter(function (x) { return x.id !== delBtn.getAttribute('data-del-comment'); });
+          saveVideos();
+          renderLongComments(video);
+          renderFeed();
+        }
+      });
+
+      document.getElementById('closeDownloadModalBtn').addEventListener('click', closeDownloadModal);
+      document.getElementById('downloadModal').addEventListener('click', function (e) { if (e.target === this) closeDownloadModal(); });
+      document.getElementById('dlDirectActionBtn').addEventListener('click', function () {
+        const v = state.videos.find(function (x) { return x.id === state.downloadVideoId; });
+        const directUrl = getDirectFileUrl(v);
+        if (directUrl) { triggerDirectDownload(directUrl, v.title); closeDownloadModal(); }
+      });
+      document.getElementById('dlSaveShortcutBtn').addEventListener('click', function () {
+        const video = state.videos.find(function (v) { return v.id === state.downloadVideoId; });
+        if (!video) return;
+        const parsed = parseVideoUrl(video.url);
+        const mediaTag = parsed.embedType === 'html5'
+          ? '<video src="' + escapeHtml(parsed.embedUrl) + '" controls style="width:100%;max-width:860px;border-radius:12px;"></video>'
+          : '<iframe src="' + escapeHtml(parsed.embedUrl) + '" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;max-width:860px;aspect-ratio:' + (video.format === 'short' ? '9/16;max-width:380px' : '16/9') + ';border:0;border-radius:12px;" allowfullscreen></iframe>';
+        const htmlDoc = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
+          escapeHtml(video.title) + '</title></head><body style="margin:0;padding:24px;background:#09090b;color:#f4f4f5;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;">' +
+          '<h2 style="max-width:860px;text-align:center;">' + escapeHtml(video.title) + '</h2>' + mediaTag +
+          '<p style="margin-top:16px;font-size:14px;color:#a1a1aa;">Creator: @' + escapeHtml(video.creator) + ' &bull; <a href="' + escapeHtml(video.url) + '" target="_blank" style="color:#f43f5e;">Open Original Link</a></p></body></html>';
+        triggerBlobDownload(htmlDoc, sanitizeFilename(video.title) + '.html', 'text/html');
+      });
+      document.getElementById('dlSaveMetaBtn').addEventListener('click', function () {
+        const video = state.videos.find(function (v) { return v.id === state.downloadVideoId; });
+        if (!video) return;
+        const txt = 'Title: ' + video.title + '\nCreator: @' + video.creator + '\nVideo Link: ' + video.url + '\n';
+        triggerBlobDownload(txt, sanitizeFilename(video.title) + '.txt', 'text/plain');
+      });
+      document.getElementById('dlCopySourceBtn').addEventListener('click', function () {
+        const v = state.videos.find(function (x) { return x.id === state.downloadVideoId; });
+        if (v) copyText(v.url);
+      });
+
+      document.getElementById('openPostModalBtn').addEventListener('click', function () { openPostModal(); });
+      document.getElementById('emptyPostBtn').addEventListener('click', function () { openPostModal(); });
+      document.getElementById('closePostModalBtn').addEventListener('click', closePostModal);
+      document.getElementById('cancelPostBtn').addEventListener('click', closePostModal);
+      document.getElementById('postModal').addEventListener('click', function (e) { if (e.target === this) closePostModal(); });
+      document.getElementById('postUrlInput').addEventListener('input', handleUrlPreview);
+
+      document.getElementById('postForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const url = document.getElementById('postUrlInput').value.trim();
+        const title = document.getElementById('postTitleInput').value.trim();
+        const creator = document.getElementById('postCreatorInput').value.trim() || 'guest_creator';
+        const category = document.getElementById('postCategoryInput').value;
+        const downloadUrl = document.getElementById('postDownloadUrlInput').value.trim();
+        const description = document.getElementById('postDescInput').value.trim();
+        const formatRadio = document.querySelector('input[name="postFormat"]:checked');
+        const parsed = parseVideoUrl(url);
+        if (!parsed.valid || !title) { showToast('Please enter a valid video URL and title.'); return; }
+
+        const fmt = formatRadio ? formatRadio.value : parsed.format;
+        const newVideo = {
+          id: 'vid_' + Date.now(),
+          title: title,
+          url: url,
+          platform: parsed.platform,
+          format: fmt,
+          creator: creator,
+          category: category,
+          downloadUrl: downloadUrl,
+          description: description,
+          likes: 0,
+          liked: false,
+          followed: false,
+          createdAt: Date.now(),
+          isStarter: false,
+          comments: []
+        };
+        state.videos.unshift(newVideo);
+        saveVideos();
+        closePostModal();
+        showToast('Video deployed!');
+        if (fmt === 'short') openInstaReel(newVideo.id);
+        else { resetAllFilters(); openLongPlayer(newVideo.id); }
+      });
+
+      function openGithubModal() { document.getElementById('githubModal').classList.remove('hidden'); }
+      function closeGithubModal() { document.getElementById('githubModal').classList.add('hidden'); }
+      document.getElementById('openGithubModalBtn').addEventListener('click', openGithubModal);
+      document.getElementById('openGithubModalBtnMobile').addEventListener('click', openGithubModal);
+      document.getElementById('sidebarGithubBtn').addEventListener('click', openGithubModal);
+      document.getElementById('closeGithubModalBtn').addEventListener('click', closeGithubModal);
+      document.getElementById('githubModal').addEventListener('click', function (e) { if (e.target === this) closeGithubModal(); });
+
+      document.getElementById('exportJsonBtn').addEventListener('click', function () {
+        triggerBlobDownload(JSON.stringify(state.videos, null, 2), 'linkstream-videos.json', 'application/json');
+      });
+      document.getElementById('importJsonInput').addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          try {
+            const data = JSON.parse(reader.result);
+            if (!Array.isArray(data)) throw new Error('Invalid JSON');
+            state.videos = data;
+            saveVideos();
+            renderFeed();
+            closeGithubModal();
+            showToast('Imported ' + data.length + ' videos!');
+          } catch (_) { showToast('Invalid JSON file.'); }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      });
+      document.getElementById('resetDemoBtn').addEventListener('click', function () {
+        state.videos = JSON.parse(JSON.stringify(STARTER_VIDEOS));
+        saveVideos();
+        renderFeed();
+        closeGithubModal();
+        showToast('Starter feed restored.');
+      });
+
+      document.addEventListener('keydown', function (e) {
+        const tag = (e.target && e.target.tagName) || '';
+        if (e.key === 'Escape') {
+          if (!document.getElementById('playerModal').classList.contains('hidden')) closeLongPlayer();
+          if (!document.getElementById('postModal').classList.contains('hidden')) closePostModal();
+          if (!document.getElementById('githubModal').classList.contains('hidden')) closeGithubModal();
+          if (!document.getElementById('downloadModal').classList.contains('hidden')) closeDownloadModal();
+        } else if (state.activeTab === 'short' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+          if (e.key === 'ArrowDown') { e.preventDefault(); stepReel(1); }
+          if (e.key === 'ArrowUp') { e.preventDefault(); stepReel(-1); }
+        }
+      });
+
+      state.videos = loadVideos();
+      renderFeed();
+    })();
+  </script>
 </body>
 </html>
